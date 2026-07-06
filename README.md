@@ -1,4 +1,4 @@
-# Minicode - AI Coding Agent 学习版
+# Minicode - AI Coding Agent 简化优化版
 
 <p align="center">
   <strong>基于 MiniCode Python 的深度剖析与学习实践 — 添加了完整中文注释、架构分析和学习框架。并且进行在记忆模块方面的优化</strong>
