@@ -35,7 +35,7 @@ def _parse_scope(args: list[str]) -> tuple[str, list[str]]:
         (scope, rest) 元组，scope 为 "project" 或 "user"，
         rest 为移除 --project 后的剩余参数
     """
-    # rest = list(args)
+    rest = list(args)
     if "--project" in rest:
         rest.remove("--project")
         return "project", rest

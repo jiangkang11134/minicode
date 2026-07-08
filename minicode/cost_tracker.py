@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -185,12 +186,66 @@ def calculate_cost(
         以 USD 计的成本。
     """
     pricing = MODEL_PRICING.get(model, MODEL_PRICING["default"])
-    return (
+    return float(
         (input_tokens / 1_000_000) * pricing["input"]
         + (output_tokens / 1_000_000) * pricing["output"]
         + (cache_read_tokens / 1_000_000) * pricing["cache_read"]
         + (cache_creation_tokens / 1_000_000) * pricing["cache_write"]
     )
+
+
+# ══════════════════════════════════════════════════════════════
+# Token / Cost 上限控制
+# ══════════════════════════════════════════════════════════════
+
+def get_cost_limit() -> float | None:
+    """读取环境变量中的成本上限（美元）。
+
+    通过 MINICODE_API_COST_LIMIT 设置，例如：
+      export MINICODE_API_COST_LIMIT=0.50   # 上限 $0.50
+      export MINICODE_API_COST_LIMIT=1.00   # 上限 $1.00
+      export MINICODE_API_COST_LIMIT=""      # 不限制
+
+    返回:
+        float 上限金额（美元），None 代表不限制
+    """
+    val = os.environ.get("MINICODE_API_COST_LIMIT", "").strip()
+    if not val:
+        return None
+    try:
+        limit = float(val)
+        return limit if limit > 0 else None
+    except ValueError:
+        return None
+
+
+def check_cost_limit() -> None:
+    """每次 API 调用前检查是否超过成本上限。
+
+    从全局 store 中读取累计成本，与环境变量设定的上限比较。
+    超过上限则抛出 RuntimeError，agent 循环捕获后停止。
+
+    配置方式：
+      export MINICODE_API_COST_LIMIT=0.50   # 单次运行最多花 $0.50
+      export MINICODE_API_COST_LIMIT=       # 不限制（默认）
+    """
+    limit = get_cost_limit()
+    if limit is None:
+        return
+
+    try:
+        from minicode.state import get_global_store
+        store = get_global_store()
+        state = store.get_state()
+        spent = state.cost_tracker.total_cost_usd if state.cost_tracker else 0.0
+    except Exception:
+        return  # 无 store 时不检查（测试场景）
+
+    if spent >= limit:
+        raise RuntimeError(
+            f"API cost limit reached: ${spent:.4f} >= ${limit:.4f}. "
+            f"Set MINICODE_API_COST_LIMIT to a higher value or unset it to disable."
+        )
 
 
 # ---------------------------------------------------------------------------

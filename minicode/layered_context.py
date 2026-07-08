@@ -321,7 +321,7 @@ class LayeredContext:
             统计信息字典：before_tokens, after_tokens, saved_tokens,
             removed_items（移除的空白项数）, merged_items（合并的项数）
         """
-        # stats = {"before_tokens": self.get_total_tokens(), "removed_items": 0, "merged_items": 0}
+        stats = {"before_tokens": self.get_total_tokens(), "removed_items": 0, "merged_items": 0}
         for layer in ContextLayer:
             contents = self._layers[layer]
             non_empty = [c for c in contents if c.text.strip()]

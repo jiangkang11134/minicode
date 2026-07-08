@@ -145,13 +145,12 @@
   {
     "id": "T007",
     "mode": "strict",
-    "elapsed_s": 141.4,
-    "code": "# === bracket_checker.py ===\ndef is_balanced(s: str) -> bool:\n    \"\"\"判断字符串中的小括号是否匹配。\n\n    只处理 '(' 和 ')'，忽略其他字符。\n\n    Args:\n        s: 输入字符串\n\n    Returns:\n        括号匹配返回 True，否则返回 False\n    \"\"\"\n    count = 0\n    for ch in s:\n        if ch == '(':\n            count += 1\n        elif ch == ')':\n            count -= 1\n            if count < 0:\n                return False\n    return count == 0\n\n\ndef is_balanced_extended(s: str) -> bool:\n    \"\"\"判断字符串中的小括号、中括号、大括号是否匹配。\n\n    支持的括号对：() [] {}\n    必须正确嵌套。\n\n    Args:\n        s: 输入字符串\n\n    Returns:\n        括号匹配返回 True，否则返回 False\n    \"\"\"\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n\n    for ch in s:\n        if ch in '([{':\n            stack.append(ch)\n        elif ch in ')]}':\n            if not stack or stack[-1] != pairs[ch]:\n                return False\n            stack.pop()\n\n    return len(stack) == 0\n\n\nclass BracketChecker:\n    \"\"\"括号匹配检查器，提供 is_balanced 和 is_balanced_extended 两个类方法。\"\"\"\n\n    @staticmethod\n    def is_balanced(s: str) -> bool:\n        \"\"\"判断字符串中的小括号是否匹配。\n\n        Args:\n            s: 输入字符串\n\n        Returns:\n            括号匹配返回 True，否则返回 False\n        \"\"\"\n        return is_balanced(s)\n\n    @staticmethod\n    def is_balanced_extended(s: str) -> bool:\n        \"\"\"判断字符串中的小括号、中括号、大括号是否匹配。\n\n        Args:\n            s: 输入字符串\n\n        Returns:\n            括号匹配返回 True，否则返回 False\n        \"\"\"\n        return is_balanced_extended(s)\n\n",
-    "error": true,
+    "elapsed_s": 500,
+    "code": "(超时)",
     "score": {
-      "correct": true,
-      "score": 100,
-      "reason": "代码正确实现了括号匹配及扩展的需求。"
+      "correct": false,
+      "score": 0,
+      "reason": "超时"
     }
   },
   {
@@ -245,25 +244,23 @@
   {
     "id": "T012",
     "mode": "off",
-    "elapsed_s": 123.7,
-    "code": "# === dict_utils.py ===\n\"\"\"字典工具函数模块。\"\"\"\n\nfrom typing import Any, Dict, List, Optional\n\n\ndef find_keys_by_value(d: dict, target: Any) -> List[Any]:\n    \"\"\"查找字典中所有值为 target 的键。\n\n    参数:\n        d: 待搜索的字典\n        target: 要匹配的值\n\n    返回:\n        所有值为 target 的键组成的列表。若未找到，返回空列表。\n\n    示例:\n        >>> find_keys_by_value({\"a\": 1, \"b\": 2, \"c\": 1}, 1)\n        ['a', 'c']\n        >>> find_keys_by_value({}, 1)\n        []\n    \"\"\"\n    return [k for k, v in d.items() if v == target]\n\n\ndef find_all_values_by_keys(d: Dict[Any, Any], keys: List[Any]) -> Dict[Any, Optional[Any]]:\n    \"\"\"根据键列表从字典中批量取值。\n\n    参数:\n        d: 源字典\n        keys: 要查找的键列表\n\n    返回:\n        键到值的映射字典。若某个键不存在，其值为 None。\n\n    示例:\n        >>> find_all_values_by_keys({\"a\": 1, \"b\": 2, \"c\": 3}, [\"a\", \"c\", \"x\"])\n        {'a': 1, 'c': 3, 'x': None}\n        >>> find_all_values_by_keys({}, [\"a\"])\n        {'a': None}\n    \"\"\"\n    return {k: d.get(k, None) for k in keys}\n\n",
-    "error": true,
+    "elapsed_s": 500,
+    "code": "(超时)",
     "score": {
-      "correct": true,
-      "score": 100,
-      "reason": "代码准确实现了字典查询工具的需求，包括根据值查找键以及根据键列表获取对应的值。"
+      "correct": false,
+      "score": 0,
+      "reason": "超时"
     }
   },
   {
     "id": "T012",
     "mode": "strict",
-    "elapsed_s": 141.5,
-    "code": "# === dict_utils.py ===\n\"\"\"字典工具函数集。\"\"\"\n\n\ndef find_keys_by_value(d: dict, target) -> list:\n    \"\"\"返回字典中所有值为 target 的键。\n\n    参数:\n        d: 输入字典\n        target: 要查找的目标值\n\n    返回:\n        所有值为 target 的键的列表（顺序与字典遍历顺序一致）\n\n    示例:\n        >>> find_keys_by_value({\"a\": 1, \"b\": 2, \"c\": 1}, 1)\n        ['a', 'c']\n    \"\"\"\n    return [k for k, v in d.items() if v == target]\n\n\ndef find_all_values_by_keys(d: dict, keys: list) -> list:\n    \"\"\"根据键列表从字典中取值。\n\n    参数:\n        d: 输入字典\n        keys: 要取值的键列表\n\n    返回:\n        对应键的值列表（不存在的键跳过不报错）\n\n    示例:\n        >>> find_all_values_by_keys({\"a\": 1, \"b\": 2, \"c\": 3}, [\"a\", \"c\"])\n        [1, 3]\n    \"\"\"\n    return [d[k] for k in keys if k in d]\n\n",
-    "error": true,
+    "elapsed_s": 500,
+    "code": "(超时)",
     "score": {
-      "correct": true,
-      "score": 100,
-      "reason": "代码准确实现了字典查询工具的需求。"
+      "correct": false,
+      "score": 0,
+      "reason": "超时"
     }
   },
   {
@@ -368,12 +365,13 @@
   {
     "id": "T017",
     "mode": "strict",
-    "elapsed_s": 500,
-    "code": "(超时)",
+    "elapsed_s": 0.2,
+    "code": "(无文件)",
+    "error": true,
     "score": {
       "correct": false,
       "score": 0,
-      "reason": "超时"
+      "reason": "没有提供任何代码来实现数组查找工具的功能。"
     }
   },
   {
@@ -423,13 +421,12 @@
   {
     "id": "T020",
     "mode": "off",
-    "elapsed_s": 171.0,
-    "code": "(无文件)",
-    "error": true,
+    "elapsed_s": 500,
+    "code": "(超时)",
     "score": {
       "correct": false,
       "score": 0,
-      "reason": "没有提供任何代码来实现数字转换工具的功能"
+      "reason": "超时"
     }
   },
   {

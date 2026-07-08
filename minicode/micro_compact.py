@@ -178,7 +178,7 @@ class MicroCompactor:
         返回:
             该消息是否应被压缩。
         """
-        # data = result_msg.get("data", {}) or {}
+        data = result_msg.get("data", {}) or {}
         tool_name = data.get("tool_name") or data.get("name") or ""
         if not tool_name:
             return False
@@ -197,7 +197,7 @@ class MicroCompactor:
         返回:
             估算的 token 数，至少为 1。
         """
-        # content = msg.get("content", "") or ""
+        content = msg.get("content", "") or ""
         return max(1, len(str(content)) // 4)
 
     def _compact_time_based(

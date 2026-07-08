@@ -20,7 +20,7 @@ def _last_user_message(messages):
     返回:
         最后一条 user 消息的 content 字符串，若没有则返回空字符串。
     """
-    # return next((message["content"] for message in reversed(messages) if message["role"] == "user"), "")
+    return next((message["content"] for message in reversed(messages) if message["role"] == "user"), "")
 
 
 def _last_tool_message(messages):
@@ -32,7 +32,7 @@ def _last_tool_message(messages):
     返回:
         最后一条 tool_result 消息的字典，若没有则返回 None。
     """
-    # return next((message for message in reversed(messages) if message["role"] == "tool_result"), None)
+    return next((message for message in reversed(messages) if message["role"] == "tool_result"), None)
 
 
 def _latest_assistant_call(messages):
@@ -44,7 +44,7 @@ def _latest_assistant_call(messages):
     返回:
         最后调用的工具名称字符串，若没有则返回 None。
     """
-    # call = next((message for message in reversed(messages) if message["role"] == "assistant_tool_call"), None)
+    call = next((message for message in reversed(messages) if message["role"] == "assistant_tool_call"), None)
     return call["toolName"] if call else None
 
 
@@ -69,7 +69,7 @@ class MockModelAdapter:
         返回:
             AgentStep 实例，类型为 "assistant" 或 "tool_calls"。
         """
-        # tool_message = _last_tool_message(messages)
+        tool_message = _last_tool_message(messages)
         if tool_message and tool_message["role"] == "tool_result":
             last_call = _latest_assistant_call(messages)
             if last_call == "list_files":

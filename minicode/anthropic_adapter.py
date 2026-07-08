@@ -363,6 +363,10 @@ class AnthropicModelAdapter:
         if on_stream_chunk:
             request_body["stream"] = True
 
+        # 成本上限检查
+        from minicode.cost_tracker import check_cost_limit
+        check_cost_limit()
+
         request = urllib.request.Request(
             url=_messages_endpoint(self.runtime.get("baseUrl", "")),
             data=json.dumps(request_body).encode("utf-8"),

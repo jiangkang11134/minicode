@@ -389,6 +389,10 @@ class OpenAIModelAdapter:
             if v is not None:
                 request_body[k] = v
 
+        # 成本上限检查
+        from minicode.cost_tracker import check_cost_limit
+        check_cost_limit()
+
         request = urllib.request.Request(
             url=_get_openai_chat_completions_url(self.runtime),
             data=json.dumps(request_body).encode("utf-8"),

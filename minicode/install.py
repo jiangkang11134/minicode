@@ -32,7 +32,7 @@ def _read_input(prompt: str, default: str | None = None) -> str:
     返回:
         用户输入或默认值（不会返回 None）
     """
-    # suffix = f" [{default}]" if default else ""
+    suffix = f" [{default}]" if default else ""
     try:
         value = input(f"{prompt}{suffix}: ").strip()
         return value or default or ""
@@ -185,7 +185,7 @@ def _check_path_entry(target_dir: str) -> bool:
     返回:
         True 如果在 PATH 中，否则 False
     """
-    # path_entries = os.environ.get("PATH", "").split(os.pathsep)
+    path_entries = os.environ.get("PATH", "").split(os.pathsep)
     return target_dir in path_entries
 
 

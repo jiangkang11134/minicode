@@ -71,7 +71,7 @@ def _sanitize_tool_segment(value: str) -> str:
     返回:
         清理后的安全工具名片段，空结果时回退为 "tool"
     """
-    # normalized = "".join(char.lower() if char.isalnum() or char in {"_", "-"} else "_" for char in value)
+    normalized = "".join(char.lower() if char.isalnum() or char in {"_", "-"} else "_" for char in value)
     normalized = normalized.strip("_")
     return normalized or "tool"
 
@@ -179,30 +179,10 @@ def _prepare_spawn(command: str, args: list[str]) -> tuple[list[str] | str, dict
 
 
 def _normalize_input_schema(schema: dict[str, Any] | None) -> dict[str, Any]:
-    """标准化 JSON Schema，确保输入 schema 始终为合法的 dict。
-
-    参数:
-        schema: 原始 schema，可能为 None 或非 dict 类型
-
-    返回:
-        标准化的 schema dict，默认为允许任意属性的 object 类型
-    """
-    # def _format_content_block(block: Any) -> str:
-    """格式化 MCP 返回内容块（content block）为可读字符串。
-
-    支持 text 类型块直接返回文本，其他类型以 JSON 格式呈现。
-
-    参数:
-        block: 内容块，可以是 dict 或任意类型
-
-    返回:
-        格式化后的字符串
-    """
-    if not isinstance(block, dict):
-        return json.dumps(block, indent=2, ensure_ascii=False)
-    if block.get("type") == "text" and "text" in block:
-        return str(block["text"])
-    return json.dumps(block, indent=2, ensure_ascii=False)
+    """标准化 JSON Schema，确保输入 schema 始终为合法的 dict。"""
+    if not isinstance(schema, dict):
+        return {"type": "object", "additionalProperties": True}
+    return schema
 
 
 def _format_tool_call_result(result: Any) -> ToolResult:
@@ -348,7 +328,7 @@ class StdioMcpClient:
         - "newline-json" → 只尝试 Newline-JSON 协议
         - 未配置 → 按 [content-length, newline-json] 顺序自动探测
         """
-        # configured = self.config.get("protocol")
+        configured = self.config.get("protocol")
         if configured == "content-length":
             return ["content-length"]
         if configured == "newline-json":
@@ -422,7 +402,7 @@ class StdioMcpClient:
         抛出:
             RuntimeError: 命令为空、验证失败或命令不存在时抛出
         """
-        # command = str(self.config.get("command", "")).strip()
+        command = str(self.config.get("command", "")).strip()
         if not command:
             raise RuntimeError(f'MCP server "{self.server_name}" has no command configured.')
 
@@ -584,7 +564,7 @@ class StdioMcpClient:
         参数:
             message: JSON-RPC 消息字典，需包含整型 id 字段
         """
-        # message_id = message.get("id")
+        message_id = message.get("id")
         if not isinstance(message_id, int):
             return
         with self._lock:
@@ -646,7 +626,7 @@ class StdioMcpClient:
         抛出:
             RuntimeError: 请求超时或服务端返回错误时抛出
         """
-        # message_id = self.next_id
+        message_id = self.next_id
         self.next_id += 1
         response_queue: Queue[Any] = Queue(maxsize=1)
         with self._lock:
