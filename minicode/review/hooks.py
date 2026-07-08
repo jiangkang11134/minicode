@@ -70,6 +70,7 @@ class ReviewHooks:
         self._import_map_thread: threading.Thread | None = None  # Defect 3: 后台线程追踪
         self._prev_mode: str | None = None   # 模式切换检测（记录上一次模式）
         self._retro_scan_done: bool = False  # 过渡后只扫描一次
+        self._new_files: set[str] = set()    # 跟踪本轮新创建的文件（用于新人代码触发条件）
 
         # 惰性建表（只在 loose/strict 模式下执行）
         self._init_import_map()
@@ -250,6 +251,10 @@ class ReviewHooks:
         content = tool_input.get("content") or tool_input.get("new_string", "")
         file_path = tool_input.get("file_path") or tool_input.get("path", "")
 
+        # 跟踪新创建的文件（硬性检查文件是否已存在）
+        if file_path and not Path(file_path).exists():
+            self._new_files.add(file_path)
+
         if not content.strip():
             return None
 
@@ -314,11 +319,11 @@ class ReviewHooks:
     ):
         """write/edit/patch 成功后调用。
 
-        agent_loop_lite 中：
-            if _review_hooks and result.ok and call in write/edit/patch:
-                _review_hooks.on_file_written(file_path, diff_stat, ...)
-
-        Defect 3: import map 增量更新放入后台线程，不阻塞主循环。
+        触发条件判断（mode_engine.should_trigger_strict）：
+          1. 安全路径（auth/login/security 等）
+          2. diff 特征（大变更/跨文件/API 变更）
+          3. 新文件（首次创建，此前不存在）
+          4. 历史问题率（同文件 90 天内 >60%）
         """
         # 1. 增量更新 import map → 后台线程执行
         self._import_map_thread = threading.Thread(
@@ -333,7 +338,9 @@ class ReviewHooks:
             from minicode.review.mode_engine import should_trigger_strict
 
             should, reason = should_trigger_strict(
-                file_path, diff_stat, review_store, author, known_authors
+                file_path, diff_stat, review_store,
+                cwd=self.cwd,
+                is_new_file=file_path in self._new_files,
             )
 
             logger.info("review.post_write", extra={
