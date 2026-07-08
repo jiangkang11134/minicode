@@ -1,6 +1,6 @@
-"""MiniCode 配置管理模块。
+"""SmartCode 配置管理模块。
 
-提供 MiniCode 的配置加载、合并、验证和持久化功能，
+提供 SmartCode 的配置加载、合并、验证和持久化功能，
 包括模型回退策略、供应商通道描述、MCP 配置管理等功能。
 """
 
@@ -516,9 +516,9 @@ def load_effective_settings(
 ) -> dict[str, Any]:
     """加载最终生效的配置，合并多级配置源。 按优先级从低到高依次加载并合并：
     1. Claude 全局设置（~/.claude/settings.json）
-    2. MiniCode 全局 MCP 配置（~/.mini-code/mcp.json）
+    2. SmartCode 全局 MCP 配置（~/.mini-code/mcp.json）
     3. 项目级 .mcp.json（需要显式信任）
-    4. MiniCode 全局设置（~/.mini-code/settings.json）
+    4. SmartCode 全局设置（~/.mini-code/settings.json）
 
     参数:
         cwd: 工作目录路径。
@@ -556,7 +556,7 @@ def load_effective_settings(
 
 
 def save_mini_code_settings(updates: dict[str, Any]) -> None:
-    """保存 MiniCode 全局设置到 ~/.mini-code/settings.json。 将更新与现有设置合并后写入文件，自动创建父目录。
+    """保存 SmartCode 全局设置到 ~/.mini-code/settings.json。 将更新与现有设置合并后写入文件，自动创建父目录。
 
     参数:
         updates: 需要更新或覆盖的设置字典。
@@ -575,21 +575,21 @@ def load_runtime_config(
     *,
     trust_project_mcp: bool | None = None,
 ) -> dict[str, Any]:
-    """加载并构建完整的运行时配置字典。 【为什么需要】运行时配置是整个 MiniCode 的配置中枢，
+    """加载并构建完整的运行时配置字典。 【为什么需要】运行时配置是整个 SmartCode 的配置中枢，
     从多级配置源（settings.json、环境变量等）收集模型、认证、
     通道、路径、偏好等信息，确保后续各模块在统一且完整的
     配置上下文中运行。
 
     ╔══ 完整执行流程 ══╗
     ║  第1步: 读取 ~/.mini-code/settings.json                ║
-    ║   └─ 加载全局 MiniCode 设置（模型、API Key 等）        ║
+    ║   └─ 加载全局 SmartCode 设置（模型、API Key 等）        ║
     ║  第2步: 读取 .env 字段                                  ║
     ║   └─ 提取有效设置中的 env 字典（settings_env）          ║
     ║  第3步: 环境变量覆盖                                    ║
     ║   └─ os.environ 中的同名变量覆盖 settings_env 的值      ║
     ║  第4步: MCP 配置加载                                    ║
     ║   ├─ Claude 全局 MCP (~/.claude/settings.json)          ║
-    ║   ├─ MiniCode 全局 MCP (~/.mini-code/mcp.json)          ║
+    ║   ├─ SmartCode 全局 MCP (~/.mini-code/mcp.json)          ║
     ║   └─ 项目级 .mcp.json（需要 --trust-project-mcp）       ║
     ║  第5步: 合并配置                                        ║
     ║   ├─ 合并 mcpServers（深度合并各层 env 子字段）         ║

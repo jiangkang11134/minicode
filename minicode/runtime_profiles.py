@@ -1,4 +1,4 @@
-"""MiniCode 运行时 Profile 定义与管理。
+"""SmartCode 运行时 Profile 定义与管理。
 
 定义不同的运行时 profile，每个 profile 包含 agent 轮次执行时使用的参数，
 如最大步骤数、空响应重试限制、working memory 配置、widening 策略等。

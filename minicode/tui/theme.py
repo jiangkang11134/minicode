@@ -1,4 +1,4 @@
-"""MiniCode TUI 的 Morandi 色彩主题。
+"""SmartCode TUI 的 Morandi 色彩主题。
 
 低饱和度调色板，灵感来自 Rust 版本的 ColorTheme。
 所有颜色以 ANSI 256 色或 24 位（RGB）转义码形式表示。

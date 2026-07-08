@@ -3,7 +3,7 @@ from __future__ import annotations
 """文件列表工具。
 
 列出工作区中指定路径下的文件和目录，
-通过 ToolDefinition 注册到 MiniCode 工具系统中。
+通过 ToolDefinition 注册到 SmartCode 工具系统中。
 """
 
 from pathlib import Path

@@ -1,4 +1,4 @@
-"""End-to-end integration tests for MiniCode Python.
+"""End-to-end integration tests for SmartCode Python.
 
 Tests the full pipeline: agent loop → model → tool execution → message flow,
 using the MockModelAdapter (no API key needed).
@@ -52,7 +52,7 @@ def tmp_workspace(tmp_path: Path) -> Path:
                 return f"Hello, {name}!"
 
             if __name__ == "__main__":
-                print(greet("MiniCode"))
+                print(greet("SmartCode"))
         """),
         encoding="utf-8",
     )
@@ -208,7 +208,7 @@ class TestAgentLoopIntegration:
         """Agent receives /edit → calls edit_file tool → file is modified."""
         system_messages.append({
             "role": "user",
-            "content": "/edit hello.txt::Hello, world!::Hello, MiniCode!",
+            "content": "/edit hello.txt::Hello, world!::Hello, SmartCode!",
         })
 
         result = run_agent_turn(
@@ -220,7 +220,7 @@ class TestAgentLoopIntegration:
         )
 
         content = (tmp_workspace / "hello.txt").read_text(encoding="utf-8")
-        assert "Hello, MiniCode!" in content
+        assert "Hello, SmartCode!" in content
         assert "Hello, world!" not in content
 
     def test_grep_files_via_agent(

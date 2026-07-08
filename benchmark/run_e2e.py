@@ -4,7 +4,7 @@
 评测方法：qwen-max 对最终生成的代码打分，计算正确率。
 
 用法：
-    cd MiniCode-1 && python benchmark/run_e2e.py
+    cd SmartCode-1 && python benchmark/run_e2e.py
 """
 
 from __future__ import annotations
@@ -206,7 +206,7 @@ def main():
     # ── 写入报告 ──
     report_path = Path(__file__).resolve().parent.parent / "docs" / "端到端评测报告.md"
     lines = [
-        "# MiniCode 端到端评测报告",
+        "# SmartCode 端到端评测报告",
         f"\n> 生成时间: {time.strftime('%Y-%m-%d %H:%M:%S')}",
         f"> 评测模型: {QWEN_MODEL}",
         f"> 任务数: {total}（来自 HumanEval + MBPP 改编）",

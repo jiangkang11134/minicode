@@ -1,4 +1,4 @@
-"""Zustand 风格的状态管理，用于 MiniCode Python。
+"""Zustand 风格的状态管理，用于 SmartCode Python。
 
 提供简单、可预测的状态容器：
 - 通过 updater 函数实现不可变更新

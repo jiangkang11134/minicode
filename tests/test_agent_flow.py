@@ -3,7 +3,7 @@
 Runs a complete agent turn with the mock model and checks that every
 major controller in the Sense→Control→Act pipeline was invoked.
 
-This is the definitive "MiniCode is working" test.
+This is the definitive "SmartCode is working" test.
 """
 from __future__ import annotations
 

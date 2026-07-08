@@ -1,4 +1,4 @@
-"""MiniCode Python TTY 应用程序。 本模块实现了 MiniCode 的全屏终端用户界面，包括：
+"""SmartCode Python TTY 应用程序。 本模块实现了 SmartCode 的全屏终端用户界面，包括：
 - 带有工具输出折叠功能的实时转录渲染
 - 交互式权限批准提示
 - 后台代理线程管理
@@ -64,7 +64,7 @@ def run_tty_app(
 ) -> list[ChatMessage]:
     """运行事件驱动的全屏 TTY 应用程序。
 
-    该函数是 MiniCode 终端界面的主入口点。它从 TypeScript 版本移植而来，
+    该函数是 SmartCode 终端界面的主入口点。它从 TypeScript 版本移植而来，
     管理完整的终端生命周期，包括：初始化会话、渲染界面、
     处理用户输入、管理后台代理线程、处理权限请求，
     以及最终完成会话并返回更新后的消息列表。

@@ -1,4 +1,4 @@
-"""MiniCode Headless Runner --- 非交互式一次性执行。 灵感来源于 Hermes Agent 的 headless 模式，适用于 CI/CD 流水线和
+"""SmartCode Headless Runner --- 非交互式一次性执行。 灵感来源于 Hermes Agent 的 headless 模式，适用于 CI/CD 流水线和
 自动化工作流。
 
 用法:

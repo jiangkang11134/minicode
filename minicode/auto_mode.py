@@ -1,4 +1,4 @@
-"""MiniCode Python 的自动模式（Auto Mode）模块。
+"""SmartCode Python 的自动模式（Auto Mode）模块。
 
 灵感来自 Claude Code 的 auto mode，位于标准审批模式
 和 --dangerously-skip-permissions 之间。提供以下能力：

@@ -1,7 +1,7 @@
 ﻿"""Memory system integration tests.
 
 Verifies integration points between the memory subsystem and other
-MiniCode components: ContextManager, Session, Agent Loop, Permissions,
+SmartCode components: ContextManager, Session, Agent Loop, Permissions,
 Auto-classification, and Recovery.
 """
 from __future__ import annotations

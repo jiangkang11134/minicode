@@ -60,7 +60,7 @@ def _run(input_data: dict, context) -> ToolResult:
         req = urllib.request.Request(
             search_url,
             headers={
-                "User-Agent": "MiniCode-Python/0.5.0 (Terminal Coding Assistant)",
+                "User-Agent": "SmartCode-Python/0.5.0 (Terminal Coding Assistant)",
                 "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
             },
         )

@@ -1,4 +1,4 @@
-"""End-to-end workflow tests for the MiniCode memory system.
+"""End-to-end workflow tests for the SmartCode memory system.
 
 Covers full agent loops with memory retrieval, multi-turn accumulation,
 cross-session recovery, context-driven behavior, Chinese language support,

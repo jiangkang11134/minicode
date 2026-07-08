@@ -1,4 +1,4 @@
-"""Hooks event system for MiniCode Python. Inspired by Claude Code's hooks system (PreToolUse, PostToolUse, Stop, etc.)
+"""Hooks event system for SmartCode Python. Inspired by Claude Code's hooks system (PreToolUse, PostToolUse, Stop, etc.)
 and plugin event listeners.
 
 Provides lifecycle hooks for:

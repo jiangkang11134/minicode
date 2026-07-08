@@ -1,4 +1,4 @@
-"""MiniCode 的 Claude Code 风格上下文管理系统。
+"""SmartCode 的 Claude Code 风格上下文管理系统。
 
 实现了三层上下文管理架构：
 

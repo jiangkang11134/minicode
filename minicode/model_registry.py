@@ -1,4 +1,4 @@
-"""MiniCode 的统一模型注册表与路由系统。
+"""SmartCode 的统一模型注册表与路由系统。
 
 支持通过单一配置系统接入多个 LLM 提供商：
 - Anthropic (Claude) — 原生 Messages API
@@ -570,7 +570,7 @@ def build_provider_config(model: str, runtime: dict | None = None) -> ProviderCo
             api_key=os.environ.get("OPENROUTER_API_KEY", ""),
             extra_headers={
                 "HTTP-Referer": os.environ.get("OPENROUTER_REFERER", "https://github.com/minicode-py"),
-                "X-Title": os.environ.get("OPENROUTER_TITLE", "MiniCode Python"),
+                "X-Title": os.environ.get("OPENROUTER_TITLE", "SmartCode Python"),
             },
             extra_params={
                 # OpenRouter 支持提供商特定的路由

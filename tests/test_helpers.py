@@ -1,4 +1,4 @@
-"""Test helper utilities for MiniCode tests."""
+"""Test helper utilities for SmartCode tests."""
 import json
 from pathlib import Path
 from typing import Any

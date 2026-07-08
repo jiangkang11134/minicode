@@ -1,4 +1,4 @@
-"""MiniCode 管理 CLI — 提供子命令用于管理 MCP 服务器和 Skill。
+"""SmartCode 管理 CLI — 提供子命令用于管理 MCP 服务器和 Skill。
 
 支持以下管理命令：
   minicode mcp list/add/remove

@@ -75,7 +75,7 @@ def main():
     st_c = sum(1 for t in st if t.get("score",{}).get("correct"))
     t_n = len(TASKS)
 
-    report = f'''# MiniCode 端到端评测报告（简化版）
+    report = f'''# SmartCode 端到端评测报告（简化版）
 > 生成时间: {time.strftime('%Y-%m-%d %H:%M:%S')}
 > 评测模型: qwen-max
 > 任务数: {t_n}（单轮单文件）

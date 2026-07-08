@@ -1,4 +1,4 @@
-"""MiniCode 系统提示词构建模块。
+"""SmartCode 系统提示词构建模块。
 
 提供构建系统提示词（system prompt）所需的核心函数，
 包括从缓存读取文件、生成工程治理规则、以及动态组装完整 PromptBundle 的能力。

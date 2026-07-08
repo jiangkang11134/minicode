@@ -1,4 +1,4 @@
-"""MiniCode Python 交互式安装器。
+"""SmartCode Python 交互式安装器。
 
 配置模型、API 凭证，并安装启动器脚本到平台特定目录。
 """
@@ -101,7 +101,7 @@ def _install_launcher_script() -> str | None:
         python_exe = sys.executable.replace("/", "\\")
         launcher_script = "\r\n".join([
             "@echo off",
-            "REM MiniCode Python Launcher for Windows",
+            "REM SmartCode Python Launcher for Windows",
             f'"{python_exe}" -m minicode.main %*',
             "",
         ])
@@ -113,7 +113,7 @@ def _install_launcher_script() -> str | None:
         python_exe = sys.executable
         launcher_script = "\n".join([
             "#!/usr/bin/env bash",
-            "# MiniCode Python Launcher for macOS",
+            "# SmartCode Python Launcher for macOS",
             "# Works with bash, zsh, and other shells",
             "set -euo pipefail",
             f'exec "{python_exe}" -m minicode.main "$@"',
@@ -127,7 +127,7 @@ def _install_launcher_script() -> str | None:
         python_exe = sys.executable
         launcher_script = "\n".join([
             "#!/usr/bin/env bash",
-            "# MiniCode Python Launcher for Linux",
+            "# SmartCode Python Launcher for Linux",
             "set -euo pipefail",
             f'exec "{python_exe}" -m minicode.main "$@"',
             "",
@@ -201,7 +201,7 @@ def main() -> None:
     6. 检查 PATH 并给出对应的平台配置指引
     """
     # print("=" * 60)
-    print("  MiniCode Python 安装向导")
+    print("  SmartCode Python 安装向导")
     print("=" * 60)
     print()
     print(f"配置会写入: {MINI_CODE_SETTINGS_PATH}")
@@ -325,7 +325,7 @@ def main() -> None:
     print("    minicode-py                (如果已添加 PATH)")
     print("    python3 -m minicode.main   (通用方式)")
     print()
-    print("感谢使用 MiniCode Python！🎉")
+    print("感谢使用 SmartCode Python！🎉")
     print()
 
 

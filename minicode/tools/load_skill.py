@@ -3,7 +3,7 @@ from __future__ import annotations
 """技能加载工具。
 
 通过 SKILL.md 名称动态加载本地技能文件，
-通过 ToolDefinition 注册到 MiniCode 工具系统中。
+通过 ToolDefinition 注册到 SmartCode 工具系统中。
 """
 
 from minicode.skills import load_skill

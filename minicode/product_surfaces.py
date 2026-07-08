@@ -1,6 +1,6 @@
 """产品表面（Product Surfaces）模块。
 
-负责收集并汇总 MiniCode 运行时的各类产品状态表面，包括：
+负责收集并汇总 SmartCode 运行时的各类产品状态表面，包括：
 - 指令层（Instruction Layer）信息
 - 扩展（Extension）清单
 - 钩子（Hook）状态

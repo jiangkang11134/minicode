@@ -1,5 +1,5 @@
 """
-MiniCode Python 主入口模块。
+SmartCode Python 主入口模块。
 
 这是整个应用的 CLI 入口。用户敲 minicode-py 时第一个执行的模块。
 核心职责：解析参数 → 初始化所有子系统 → 分发到 TTY 或非交互模式。
@@ -82,7 +82,7 @@ def _render_banner(runtime: dict | None, cwd: str, permission_summary: list[str]
     model = runtime["model"] if runtime else "unconfigured"
     lines = [
         "╔══════════════════════════════════════════════════════════╗",
-        "║  🤖 MiniCode Python - Your Terminal Coding Assistant    ║",
+        "║  🤖 SmartCode Python - Your Terminal Coding Assistant    ║",
         "╠══════════════════════════════════════════════════════════╣",
         f"║  Model: {model:<46} ║",
         f"║  CWD: {cwd:<50} ║",
@@ -373,7 +373,7 @@ def _handle_preview_rewind_request(
     return 0
 
 def main() -> None:
-    """MiniCode Python 主入口函数。
+    """SmartCode Python 主入口函数。
 
     【为什么需要】作为整个应用的 CLI 入口点，main() 统一管理初始化、路由和
     资源释放的生命周期，确保所有子系统的正确启动顺序和优雅关闭。
@@ -444,7 +444,7 @@ def main() -> None:
     _configure_stdio_for_unicode()
 
     parser = argparse.ArgumentParser(
-        description="MiniCode Python - A lightweight terminal coding assistant",
+        description="SmartCode Python - A lightweight terminal coding assistant",
         add_help=True,
     )
     parser.add_argument(
@@ -622,8 +622,8 @@ def main() -> None:
             "  2. 设置 API 密钥：export ANTHROPIC_API_KEY=sk-ant-...\n"
             "  3. 或者编辑 ~/.mini-code/settings.json 文件：\n"
             '     {"model": "claude-sonnet-4-20250514", "env": {"ANTHROPIC_API_KEY": "sk-ant-..."}}\n'
-            "  4. 重启 MiniCode\n\n"
-            "📖 更多信息：https://github.com/QUSETIONS/MiniCode-Python\n"
+            "  4. 重启 SmartCode\n\n"
+            "📖 更多信息：https://github.com/QUSETIONS/SmartCode-Python\n"
             "   暂时降级到模拟模型运行...\n",
             file=sys.stderr,
         )

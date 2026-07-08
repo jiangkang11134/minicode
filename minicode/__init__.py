@@ -1,2 +1,2 @@
-"""Python port of MiniCode."""
+"""Python port of SmartCode."""
 

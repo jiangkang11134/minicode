@@ -1,4 +1,4 @@
-"""MiniCode 工具（Tooling）模块 —— 工具定义、元数据、注册与执行。
+"""SmartCode 工具（Tooling）模块 —— 工具定义、元数据、注册与执行。
 
 提供智能输出截断、工具元数据分类（只读/破坏性/并发安全等）、
 工具协议（Protocol）、以及 ToolRegistry 注册中心等基础设施。

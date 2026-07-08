@@ -3,7 +3,7 @@ from __future__ import annotations
 """Git 工作流工具。
 
 提供 status、diff、log、commit、review 等常用 Git 操作的封装，
-通过 ToolDefinition 注册到 MiniCode 的工具系统中。
+通过 ToolDefinition 注册到 SmartCode 的工具系统中。
 """
 
 import subprocess

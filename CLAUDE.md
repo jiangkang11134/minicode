@@ -1,14 +1,14 @@
-# MiniCode 审查系统 — 实现指令
+# SmartCode 审查系统 — 实现指令
 
 ## 项目简介
 
-MiniCode 是一个终端 AI 编码 Agent（类似 Claude Code 的开源 Python 实现）。核心是一个 think/act/verify 循环引擎，支持多工具调度、会话持久化、文件回退等。
+SmartCode 是一个终端 AI 编码 Agent（类似 Claude Code 的开源 Python 实现）。核心是一个 think/act/verify 循环引擎，支持多工具调度、会话持久化、文件回退等。
 
 已有代码框架完整，项目根目录为 `minicode/`。
 
 ## 本次任务
 
-给 MiniCode 添加一套**完全插拔的两级审查系统**。
+给 SmartCode 添加一套**完全插拔的两级审查系统**。
 
 ## 架构
 

@@ -1,4 +1,4 @@
-"""OpenAI 兼容 API 适配器 —— 为 MiniCode 提供 OpenAI 系列模型的接入能力。
+"""OpenAI 兼容 API 适配器 —— 为 SmartCode 提供 OpenAI 系列模型的接入能力。
 
 支持 GPT-4o、GPT-4-turbo、GPT-4o-mini 以及任何 OpenAI 兼容的端点
 （例如 Azure OpenAI、本地 LLM 的 OpenAI 兼容 API）。
@@ -27,7 +27,7 @@ from minicode.types import AgentStep, StepDiagnostics
 
 DEFAULT_MAX_RETRIES = 4
 OPENAI_MODELS = {"gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-5.5", "gpt5.5", "o1", "o1-mini", "o3-mini"}
-DEFAULT_OPENAI_USER_AGENT = "MiniCode-Python/0.5.0 (OpenAI-Compatible Adapter)"
+DEFAULT_OPENAI_USER_AGENT = "SmartCode-Python/0.5.0 (OpenAI-Compatible Adapter)"
 
 
 def _is_openai_model(model: str) -> bool:
@@ -183,13 +183,13 @@ def _is_non_retryable_openai_error(status: int, data: dict[str, Any], raw_text: 
 
 
 def _to_openai_messages(messages: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
-    """将 MiniCode 内部消息格式转换为 OpenAI Chat Completion 格式。
+    """将 SmartCode 内部消息格式转换为 OpenAI Chat Completion 格式。
 
     处理 system / user / assistant / assistant_progress / assistant_tool_call /
     tool_result 等多种角色，分别转换为 OpenAI 对应的消息结构。
 
     参数:
-        messages: MiniCode 内部格式的消息列表。
+        messages: SmartCode 内部格式的消息列表。
 
     返回:
         (system_message, chat_messages) 元组。
@@ -343,7 +343,7 @@ class OpenAIModelAdapter:
         不可重试的错误（如 model_not_found）立即抛出。
 
         参数:
-            messages: MiniCode 内部格式的消息列表。
+            messages: SmartCode 内部格式的消息列表。
             on_stream_chunk: 流式模式下逐块回调函数。
             on_thinking_delta: 思考增量回调（本适配器中未使用）。
             store: 可选的全局状态存储，用于记录成本和 token 用量。

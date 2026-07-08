@@ -1,7 +1,7 @@
 """审查系统基准测试 — 数据驱动的性能与准确性评测。
 
 用法：
-    cd MiniCode-1 && python benchmark/run_benchmark.py
+    cd SmartCode-1 && python benchmark/run_benchmark.py
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Logging configuration for MiniCode Python.
+"""Logging configuration for SmartCode Python.
 
 Provides structured logging with:
 - 分级日志（DEBUG/INFO/WARNING/ERROR）
@@ -94,7 +94,7 @@ def setup_logging(
     log_to_console: bool = True,
     structured: bool = False,
 ) -> logging.Logger:
-    """配置 MiniCode 日志系统。
+    """配置 SmartCode 日志系统。
 
     Args:
         level: 日志级别（DEBUG/INFO/WARNING/ERROR）

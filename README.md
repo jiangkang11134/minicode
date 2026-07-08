@@ -1,4 +1,4 @@
-# MiniCode — AI Coding Agent
+# SmartCode — AI Coding Agent
 
 <p align="center">
   <strong>终端 AI 编码 Agent · 两级代码审查 · Docker 沙箱测试 · 纯 Python 零依赖</strong>
@@ -14,7 +14,7 @@
 
 ## 项目简介
 
-MiniCode 是一个终端 AI 编码 Agent，类似 Claude Code 的开源 Python 实现。你给它一个自然语言任务（如"帮我写一个登录模块"），它会：
+SmartCode 是一个终端 AI 编码 Agent，类似 Claude Code 的开源 Python 实现。你给它一个自然语言任务（如"帮我写一个登录模块"），它会：
 
 1. **理解需求** → 调用 LLM 生成方案
 2. **执行工具** → 读文件、写代码、跑命令
@@ -139,7 +139,7 @@ sandbox_test(changed_files=["auth/login.py"])
   → 返回 [SANDBOX_RESULT: PASS] 或 [SANDBOX_RESULT: FAIL]
 ```
 
-| 对比 | 传统方案 | MiniCode Docker 沙箱 |
+| 对比 | 传统方案 | SmartCode Docker 沙箱 |
 |:-----|:---------|:-------------------|
 | 隔离性 | ❌ 共享文件系统 | ✅ 完全容器隔离 |
 | 回滚 | git checkout HEAD <file> | 删容器 = 回滚，零残留 |
@@ -219,7 +219,7 @@ python benchmark/run_benchmark.py
 ### 1. 安装
 
 ```bash
-cd MiniCode-1
+cd SmartCode-1
 pip install -e .
 ```
 
@@ -310,7 +310,7 @@ python benchmark/run_simple.py
 ## 项目结构
 
 ```
-MiniCode-1/
+SmartCode-1/
 ├── minicode/          核心源码（102 个 .py 文件，~42K 行）
 ├── tests/             测试（31 个文件，~11K 行）
 ├── benchmark/         基准测试

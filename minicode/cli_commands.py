@@ -1,4 +1,4 @@
-"""MiniCode CLI 命令处理模块。 提供斜杠命令的格式化、匹配、补全以及本地命令的分发处理。
+"""SmartCode CLI 命令处理模块。 提供斜杠命令的格式化、匹配、补全以及本地命令的分发处理。
 包含所有内置斜杠命令的定义、帮助信息格式化、命令自动补全
 以及会话管理、扩展管理、检查点回滚等功能的命令处理逻辑。
 """
@@ -966,7 +966,7 @@ def try_handle_local_command(
                 return format_model_list(provider=p)
         # Otherwise: set model name
         save_mini_code_settings({"model": arg})
-        return f"saved model={arg} to {MINI_CODE_SETTINGS_PATH}\nRestart MiniCode for the change to take effect."
+        return f"saved model={arg} to {MINI_CODE_SETTINGS_PATH}\nRestart SmartCode for the change to take effect."
 
     if user_input == "/user" or user_input.startswith("/user "):
         from minicode.user_profile import handle_user_command

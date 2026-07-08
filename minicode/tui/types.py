@@ -1,4 +1,4 @@
-"""MiniCode TUI 数据类型定义。
+"""SmartCode TUI 数据类型定义。
 
 提供 TranscriptEntry 数据类及其对象池管理函数，用于在 TUI 中
 表示和复用对话转录条目。

@@ -1,4 +1,4 @@
-"""MiniCode 动态提示词组装管道。
+"""SmartCode 动态提示词组装管道。
 
 实现段落级别的提示词组装，包含缓存边界和条件节，遵循 Learn Claude Code 最佳实践。
 

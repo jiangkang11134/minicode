@@ -1,4 +1,4 @@
-"""MiniCode TUI 输入处理模块。
+"""SmartCode TUI 输入处理模块。
 
 提供跨平台的原始模式键盘输入读取功能，包括 Windows 和 Unix 系统的适配。
 包含工具快捷方式执行、输入分发以及 Agent 回合的后台运行逻辑。
