@@ -610,6 +610,9 @@ def _pre_review_content(content: str, file_path: str = "") -> list[dict]:
             continue
         if fp_file:
             continue
+        # Skip lines that start with false-positive prefixes (mock_/test_/sample_/etc.)
+        if any(stripped.startswith(p) for p in _FP_PREFIXES):
+            continue
         # Skip literal string-only lines (docstrings, etc.) but not comments with TODO
         if stripped.startswith(('#', '"', "'")):
             # Only skip pure string literals; comments with TODO/FIXME still need checking

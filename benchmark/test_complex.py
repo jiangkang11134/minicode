@@ -1,9 +1,16 @@
-"""快速验证：1个跨文件 + 1个多轮任务，500s超时。"""
+"""完全验证：20个复杂任务（多轮+跨文件），off vs strict 对比。"""
 from __future__ import annotations
-import json, os, re, subprocess, sys, time, urllib.request, shutil
+import json, os, re, sys, time, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from minicode.agent_loop import run_agent_turn
+from minicode.config import load_runtime_config
+from minicode.model_registry import create_model_adapter
+from minicode.tools import create_default_tool_registry
+
 QWEN_KEY = "sk-e311f14034d04699bff301cb0da0f472"
 
 def call_qwen(code: str, prompt: str) -> dict:
@@ -51,29 +58,31 @@ for task in selected:
 
     for mode in ["off", "strict"]:
         print(f"\n  == 模式: {mode} ==")
-        env = os.environ.copy()
-        env["MINICODE_REVIEW_MODE"] = mode
-        env["PYTHONIOENCODING"] = "utf-8"
-        env["PYTHONPATH"] = str(ROOT) + os.pathsep + env.get("PYTHONPATH", "")
-        env["MINI_CODE_SHOW_GUIDE"] = "0"
-        env["PYTHONIOENCODING"] = "utf-8"
-        env["MINICODE_DEFAULT_MAX_STEPS"] = "10"
-        env["CUSTOM_MODEL"] = "deepseek-v4-flash"
-        env["CUSTOM_API_BASE_URL"] = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-        env["CUSTOM_API_KEY"] = "sk-e311f14034d04699bff301cb0da0f472"
-        env["MINICODE_REVIEW_SUB_MODEL"] = "deepseek-v4-flash"
-        env["MINICODE_REVIEW_SUB_API_KEY"] = "sk-e311f14034d04699bff301cb0da0f472"
-        env["MINICODE_REVIEW_SUB_API_BASE"] = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
         for f in task["test_files"]:
             p = ROOT / f
             if p.exists(): p.unlink()
 
+        # 设置环境变量
+        os.environ["MINICODE_REVIEW_MODE"] = mode
+        os.environ["CUSTOM_API_BASE_URL"] = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        os.environ["CUSTOM_API_KEY"] = "sk-e311f14034d04699bff301cb0da0f472"
+        os.environ["ANTHROPIC_MODEL"] = "deepseek-v4-flash"
+
+        runtime = load_runtime_config()
+        tools = create_default_tool_registry(str(ROOT), runtime=runtime)
+        model = create_model_adapter(model='deepseek-v4-flash', tools=tools, runtime=runtime)
+
         prompt = format_prompt(task)
+        sys_prompt = "你是编码助手。用 write_file 工具创建文件，用 edit_file 修改已有文件。"
         start = time.time()
         try:
-            r = subprocess.run([sys.executable, "-B", "-m", "minicode.main"],
-                cwd=str(ROOT), env=env, input=prompt, capture_output=True, text=True, timeout=180)
+            result = run_agent_turn(
+                model=model, tools=tools,
+                messages=[{"role": "system", "content": sys_prompt},
+                          {"role": "user", "content": prompt}],
+                cwd=str(ROOT), max_steps=10,
+            )
             elapsed = time.time() - start
 
             code = ""
@@ -84,19 +93,19 @@ for task in selected:
                     except: pass
                     p.unlink()
 
-            result = {"id": task["id"], "mode": mode, "elapsed_s": round(elapsed, 1),
-                      "code": code or "(无文件)", "error": bool(r.returncode)}
-            score = call_qwen(result["code"], task["description"])
-            result["score"] = score
+            res = {"id": task["id"], "mode": mode, "elapsed_s": round(elapsed, 1),
+                   "code": code or "(无文件)", "error": False}
+            score = call_qwen(res["code"], task["description"])
+            res["score"] = score
             print(f"  耗时: {elapsed:.0f}s  file={'YES' if code else 'NO':3s}  score={score.get('score',0)}")
-            results.append(result)
+            results.append(res)
 
-        except subprocess.TimeoutExpired:
-            print(f"  超时 (500s)")
-            results.append({"id": task["id"], "mode": mode, "elapsed_s": 500, "code": "(超时)", "score": {"correct": False, "score": 0, "reason": "超时"}})
         except Exception as e:
-            print(f"  异常: {e}")
-            results.append({"id": task["id"], "mode": mode, "elapsed_s": round(time.time()-start, 1), "code": f"({e})", "score": {"correct": False, "score": 0, "reason": str(e)[:80]}})
+            elapsed = time.time() - start
+            print(f"  异常 ({elapsed:.0f}s): {e}")
+            results.append({"id": task["id"], "mode": mode, "elapsed_s": round(elapsed, 1),
+                           "code": f"({e})", "error": True,
+                           "score": {"correct": False, "score": 0, "reason": str(e)[:80]}})
 
     for f in task["test_files"]:
         p = ROOT / f

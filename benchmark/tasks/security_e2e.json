@@ -1,0 +1,94 @@
+[
+  {
+    "id": "REVIEW-01",
+    "category": "loose-review-detect",
+    "description": "宽松审查检测：硬编码密钥",
+    "type": "direct-test",
+    "test_content": "DB_PASSWORD = \"root123456\"\nAPI_SECRET = \"sk-live-001\"",
+    "expected_rule": "hardcoded-secret",
+    "expected_severity": "critical",
+    "prompt": ""
+  },
+  {
+    "id": "REVIEW-02",
+    "category": "loose-review-detect",
+    "description": "宽松审查检测：SQL 注入",
+    "type": "direct-test",
+    "test_content": "def search(user):\n    conn.execute(f\"SELECT * FROM users WHERE name = '{user}'\")",
+    "expected_rule": "sqli",
+    "expected_severity": "critical",
+    "prompt": ""
+  },
+  {
+    "id": "REVIEW-03",
+    "category": "loose-review-detect",
+    "description": "宽松审查检测：eval 滥用",
+    "type": "direct-test",
+    "test_content": "result = eval(user_input)",
+    "expected_rule": "unsafe-eval",
+    "expected_severity": "major",
+    "prompt": ""
+  },
+  {
+    "id": "REVIEW-04",
+    "category": "loose-review-detect",
+    "description": "宽松审查检测：bare except",
+    "type": "direct-test",
+    "test_content": "try:\n    return a / b\nexcept:\n    return None",
+    "expected_rule": "bare-except",
+    "expected_severity": "major",
+    "prompt": ""
+  },
+  {
+    "id": "REVIEW-05",
+    "category": "loose-review-detect",
+    "description": "宽松审查检测：白名单跳过",
+    "type": "direct-test",
+    "test_content": "mock_password = \"test123\"",
+    "expected_rule": "none",
+    "expected_severity": "",
+    "prompt": "",
+    "note": "行以 mock_ 开头，应被白名单跳过"
+  },
+  {
+    "id": "REVIEW-06",
+    "category": "loose-review-detect",
+    "description": "宽松审查检测：干净代码无误报",
+    "type": "direct-test",
+    "test_content": "def add(a, b):\n    return a + b",
+    "expected_rule": "none",
+    "expected_severity": "",
+    "prompt": "",
+    "note": "纯函数，无安全风险"
+  },
+  {
+    "id": "CROSS-01",
+    "category": "cross-file",
+    "description": "严格审查：跨文件兼容性",
+    "type": "agent-task",
+    "prompt": "当前目录有 auth.py、views.py、api.py 三个文件。请给 authenticate() 函数增加第三个参数 role='user'，并更新所有调用方。",
+    "files": {
+      "auth.py": "def authenticate(username, password):\n    return username == 'admin' and password == 'secret'",
+      "views.py": "from auth import authenticate\n\ndef login_view():\n    if authenticate('admin', 'secret'):\n        return {'status': 'ok'}\n    return {'status': 'error'}",
+      "api.py": "from auth import authenticate\n\ndef api_login(req):\n    return authenticate(req['user'], req['pwd'])"
+    },
+    "measure": "off 模式下模型是否遗漏更新调用方；strict 模式下 review agent 是否检测到跨文件影响"
+  },
+  {
+    "id": "NEWFILE-01",
+    "category": "new-file",
+    "description": "严格审查：新文件检测",
+    "type": "agent-task",
+    "prompt": "在 auth/ 目录下创建一个新文件 auth/login.py，写一个简单的登录验证函数。同时也创建 auth/__init__.py。",
+    "measure": "strict 模式下是否触发'安全路径'或'新文件'严格审查条件"
+  },
+  {
+    "id": "SANDBOX-01",
+    "category": "sandbox-test",
+    "description": "Docker 沙箱：测试执行",
+    "type": "direct-test",
+    "test_content": "",
+    "prompt": "",
+    "note": "通过调用 sandbox_test 工具验证 Docker 沙箱可用"
+  }
+]

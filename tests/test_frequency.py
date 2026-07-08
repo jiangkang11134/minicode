@@ -31,7 +31,8 @@ class TestTopKFrequent:
 
     def test_default_k(self):
         """不传 k 时使用默认值 DEFAULT_TOP_K。"""
-        items = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6]
+        # 准备超过 DEFAULT_TOP_K 个不同元素来验证默认值
+        items = list(range(DEFAULT_TOP_K + 5)) * 2  # 每个元素出现 2 次
         result = top_k_frequent(items)
         assert len(result) == DEFAULT_TOP_K
 

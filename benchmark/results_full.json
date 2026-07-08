@@ -255,12 +255,13 @@
   {
     "id": "T012",
     "mode": "strict",
-    "elapsed_s": 500,
-    "code": "(超时)",
+    "elapsed_s": 169.8,
+    "code": "# === dict_utils.py ===\n\"\"\"字典工具模块。\"\"\"\n\nfrom typing import Any, Dict, List\n\n\ndef find_keys_by_value(d: Dict, target: Any) -> List:\n    \"\"\"找到字典中所有值为 target 的键。\n\n    Args:\n        d: 输入字典。\n        target: 要查找的目标值。\n\n    Returns:\n        所有值为 target 的键组成的列表；若没有匹配键，返回空列表。\n    \"\"\"\n    return [k for k, v in d.items() if v == target]\n\n\ndef find_all_values_by_keys(d: Dict, keys: List) -> List:\n    \"\"\"根据键列表从字典中取出所有存在的值。\n\n    Args:\n        d: 输入字典。\n        keys: 要取值的键列表。\n\n    Returns:\n        所有存在的键对应的值组成的列表；不存在的键被跳过。\n    \"\"\"\n    return [d[k] for k in keys if k in d]\n\n# === demo.py ===\n\"\"\"dict_utils 使用演示。\"\"\"\n\nfrom dict_utils import find_all_values_by_keys, find_keys_by_value\n\n\ndef demo_find_keys_by_value():\n    \"\"\"演示 find_keys_by_value：值 -> 键查询。\"\"\"\n    print(\"=\" * 50)\n    print(\"1. find_keys_by_value(d, target)\")\n    print(\"=\" * 50)\n\n    d = {\"apple\": \"fruit\", \"carrot\": \"vegetable\", \"banana\": \"fruit\"}\n    target = \"fruit\"\n    result = find_keys_by_value(d, target)\n    print(f\"   字典: {d}\")\n    print(f\"   查询值: {target!r}\")\n    print(f\"   结果键: {result}\\n\")\n\n\ndef demo_find_all_values_by_keys():\n    \"\"\"演示 find_all_values_by_keys：键列表 -> 值列表。\"\"\"\n    print(\"=\" * 50)\n    print(\"2. find_all_values_by_keys(d, keys)\")\n    print(\"=\" * 50)\n\n    scores = {\"Alice\": 95, \"Bob\": 87, \"Charlie\": 92, \"Diana\": 78}\n    names = [\"Alice\", \"Charlie\", \"Eve\"]\n    result = find_all_values_by_keys(scores, names)\n    print(f\"   字典: {scores}\")\n    print(f\"   查询键: {names}\")\n    print(f\"   结果值: {result}  (Eve 不存在，被跳过)\\n\")\n\n\ndef main():\n    demo_find_keys_by_value()\n    demo_find_all_values_by_keys()\n\n    print(\"=\" * 50)\n    print(\"演示结束！\")\n\nif __name__ == \"__main__\":\n    main()\n\n",
+    "error": false,
     "score": {
-      "correct": false,
-      "score": 0,
-      "reason": "超时"
+      "correct": true,
+      "score": 100,
+      "reason": "代码正确实现了字典查询工具的需求。"
     }
   },
   {
@@ -365,13 +366,12 @@
   {
     "id": "T017",
     "mode": "strict",
-    "elapsed_s": 0.2,
-    "code": "(无文件)",
-    "error": true,
+    "elapsed_s": 500,
+    "code": "(超时)",
     "score": {
       "correct": false,
       "score": 0,
-      "reason": "没有提供任何代码来实现数组查找工具的功能。"
+      "reason": "超时"
     }
   },
   {

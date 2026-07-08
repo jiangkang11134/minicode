@@ -336,7 +336,7 @@ def _run(input_data: dict, context) -> ToolResult:
             timeout=timeout,
         )
 
-        output = result.stdout + "\n" + result.stderr
+        output = (result.stdout or "") + "\n" + (result.stderr or "")
         success = result.returncode == 0
 
         # Parse results
