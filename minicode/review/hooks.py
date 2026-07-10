@@ -263,50 +263,36 @@ class StrictReviewEngine:
 # ════════════════════════════════════════════════════════════════
 
 class SandboxTestRunner:
-    """沙箱测试：Docker 容器跑测试 + 失败时 agent 分析。"""
+    """沙箱测试：Docker 容器跑测试，返回结构化结果（零 LLM）。"""
 
-    def __init__(self, cwd: str, tools, tool_context, coda_findings: list, coda_lock: threading.Lock):
+    def __init__(self, cwd: str, tools, tool_context):
         self.cwd = cwd
         self.tools = tools
         self.tool_context = tool_context
-        self._coda_findings = coda_findings
-        self._coda_lock = coda_lock
 
-    def run(self, file_path: str) -> None:
-        """在后台执行测试，结果写入 _coda_findings。"""
+    def run(self, file_path: str) -> dict | None:
+        """在 Docker 沙箱中跑测试，截断输出后返回。
+
+        完全零 LLM，直接从 pytest 输出中提取失败信息。
+
+        返回:
+            {"passed": bool, "detail": str} 或 None（异常时）
+        """
         try:
             result = self.tools.execute("sandbox_test", {"changed_files": [file_path]}, self.tool_context)
             if not result:
-                return
-
+                return None
             output = result.output or ""
             if "[SANDBOX_RESULT: PASS]" in output:
-                logger.info("Tests PASSED for %s", file_path)
-                return
+                return {"passed": True, "detail": ""}
 
-            logger.warning("Tests FAILED for %s, analyzing...", file_path)
-            prompt = (
-                f"以下是在 {file_path} 上运行测试的结果。分析失败原因并输出结构化报告。\n\n"
-                f"测试输出：\n```\n{output[:3000]}\n```\n\n"
-                f"请输出：\n1. 失败原因\n2. 失败的具体测试用例\n3. 修复建议"
-            )
-            task_input = {"description": f"分析 {file_path} 测试失败", "prompt": prompt, "agent_type": "test"}
-            if SUB_AGENT_MODEL:
-                task_input["model"] = SUB_AGENT_MODEL
-            if SUB_AGENT_API_KEY:
-                task_input["sub_api_key"] = SUB_AGENT_API_KEY
-            if SUB_AGENT_API_BASE:
-                task_input["sub_api_base"] = SUB_AGENT_API_BASE
-
-            analysis = self.tools.execute("task", task_input, self.tool_context)
-            text = analysis.output[:2000] if analysis and analysis.ok else output[:2000]
-            with self._coda_lock:
-                self._coda_findings.append({
-                    "role": "system",
-                    "content": f"[Auto Test] {file_path} 测试失败（Docker 沙箱）。\n分析报告：```\n{text}\n```\n",
-                })
+            # 直接截取 pytest 错误输出，不经过 LLM
+            detail = output[:2000]
+            logger.info("Tests FAILED for %s", file_path)
+            return {"passed": False, "detail": detail}
         except Exception as exc:
             logger.warning("Test failed: %s", exc)
+            return None
 
 
 # ════════════════════════════════════════════════════════════════
@@ -340,9 +326,9 @@ class ReviewOrchestrator:
         self._retro_scan_done: bool = False
         self._new_files: set[str] = set()
 
-        # 引擎实例（静态方法，不需实例化）
+        # 引擎实例
         self._strict = StrictReviewEngine(cwd, tools, tool_context)
-        self._sandbox = SandboxTestRunner(cwd, tools, tool_context, self._coda_findings, self._coda_lock)
+        self._sandbox = SandboxTestRunner(cwd, tools, tool_context)
 
         self._init_import_map()
 
@@ -491,9 +477,9 @@ class ReviewOrchestrator:
                     elif sev == "major" and not force:
                         return ToolResult(ok=False, output=f"[审查阻断: 兼容性影响] {file_path}\n问题: {verdict['summary']}\n{verdict.get('detail','')}\n如需强制写入，添加 force=true 参数。")
                     elif sev == "minor":
-                        self._coda_findings.append({"role": "system", "content": f"[审查建议] {file_path}\n{verdict.get('detail', verdict.get('summary', ''))}"})
+                        self._coda_findings.append({"role": "system", "content": f"[审查报告] {file_path}\n  安全审查: PASS（建议）\n{verdict.get('detail', verdict.get('summary', ''))}"})
                     else:
-                        self._coda_findings.append({"role": "system", "content": f"[审查通过] {file_path}"})
+                        self._coda_findings.append({"role": "system", "content": f"[审查报告] {file_path}\n  安全审查: PASS\n  兼容性: 无影响"})
 
         if minor:
             return ToolResult(ok=True, output="[Pre-review OK] 写入已放行。建议关注：\n" + "\n".join(f"  L{i['line']} {i['message']}" for i in minor[:3]))
@@ -502,7 +488,11 @@ class ReviewOrchestrator:
     # ── 钩子 2：写后处理 ──
 
     def on_file_written(self, file_path: str, diff_stat: dict[str, Any] | None = None, review_store=None, **kwargs):
-        """写后：更新 import map + 触发 test agent。"""
+        """写后：更新 import map + 触发 test agent。
+
+        测试结果会合并到已有的审查报告中（如果存在），
+        主 Agent 只看到一条统一的 [审查报告] 消息。
+        """
         self._import_map_thread = threading.Thread(target=self._async_update_import_map, args=(file_path,), daemon=True)
         self._import_map_thread.start()
 
@@ -510,9 +500,36 @@ class ReviewOrchestrator:
             from minicode.review.mode_engine import should_trigger_strict
             should, reason = should_trigger_strict(file_path, diff_stat, review_store, cwd=self.cwd, is_new_file=file_path in self._new_files)
             if should:
-                t = threading.Thread(target=self._sandbox.run, args=(file_path,), daemon=True)
+                # 后台跑测试，结果会合并到 _coda_findings 中
+                t = threading.Thread(target=self._merge_test_into_report, args=(file_path,), daemon=True)
                 self._bg_threads.append(t)
                 t.start()
+
+    def _merge_test_into_report(self, file_path: str) -> None:
+        """跑测试并合并结果到已有的审查报告中。"""
+        test_result = self._sandbox.run(file_path)
+        if test_result is None:
+            return
+
+        status = "通过" if test_result["passed"] else "失败"
+        test_line = f"\n  Docker 沙箱测试: {status}"
+        if not test_result["passed"] and test_result.get("detail"):
+            test_line += f"\n  失败分析:\n{test_result['detail'][:1500]}"
+
+        with self._coda_lock:
+            # 查找已有的审查报告，合并进去
+            found = False
+            for msg in self._coda_findings:
+                if msg.get("role") == "system" and "[审查报告]" in msg.get("content", "") and file_path in msg.get("content", ""):
+                    msg["content"] += "\n" + test_line
+                    found = True
+                    break
+            # 没有已有的审查报告，单独追加
+            if not found:
+                self._coda_findings.append({
+                    "role": "system",
+                    "content": f"[审查报告] {file_path}\n  测试结果: {status}\n{test_line}",
+                })
 
     # ── 钩子 3：Coda 阶段 ──
 
