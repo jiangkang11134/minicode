@@ -15,7 +15,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -279,7 +278,7 @@ class UserProfileManager:
         """获取项目配置文件的路径。"""
         return self._project_path
 
-    def load_global(self) -> Optional[UserProfile]:
+    def load_global(self) -> UserProfile | None:
         """加载全局配置文件（~/.mini-code/USER.md）。
 
         返回:
@@ -287,7 +286,7 @@ class UserProfileManager:
         """
         return self._load_from(self._global_path)
 
-    def load_project(self) -> Optional[UserProfile]:
+    def load_project(self) -> UserProfile | None:
         """加载项目配置文件（.mini-code/USER.md）。
 
         返回:
@@ -431,7 +430,7 @@ class UserProfileManager:
     # -----------------------------------------------------------------------
 
     @staticmethod
-    def _load_from(path: Path) -> Optional[UserProfile]:
+    def _load_from(path: Path) -> UserProfile | None:
         """从指定路径加载配置文件。
 
         参数:

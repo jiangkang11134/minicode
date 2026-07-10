@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import inspect
 import re
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from minicode.config import describe_fallback_guidance, describe_provider_channel
 from minicode.logging_config import get_logger

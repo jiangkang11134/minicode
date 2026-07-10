@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from minicode.cli_commands import SLASH_COMMANDS, find_matching_slash_commands
-from minicode.tui.chrome import _cached_terminal_size, get_permission_prompt_max_scroll_offset
+from minicode.tui.chrome import get_permission_prompt_max_scroll_offset
 from minicode.tui.state import ScreenState, TtyAppArgs
 from minicode.tui.transcript import get_transcript_max_scroll_offset
 

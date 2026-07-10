@@ -3,10 +3,10 @@ from __future__ import annotations
 import sys
 import threading
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from minicode.tui.chrome import invalidate_terminal_size_cache
-from minicode.tui.screen import enter_alternate_screen, exit_alternate_screen, hide_cursor, show_cursor
+from minicode.tui.screen import exit_alternate_screen, hide_cursor, show_cursor
 
 
 class _ThrottledRenderer:

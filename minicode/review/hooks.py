@@ -429,7 +429,7 @@ class ReviewHooks:
                             if ref != file_path and ref not in affected:
                                 affected.append(ref)
                 if affected:
-                    context_parts.append(f"[受影响文件]\n" + "\n".join(f"- {f}" for f in affected))
+                    context_parts.append("[受影响文件]\n" + "\n".join(f"- {f}" for f in affected))
                     for af in affected:
                         af_path = Path(self.cwd) / af
                         if af_path.exists():
@@ -447,18 +447,18 @@ class ReviewHooks:
             pass
 
         prompt = (
-            f"审查以下代码变更。按严重等级输出结果。\n\n"
+            "审查以下代码变更。按严重等级输出结果。\n\n"
             + "\n\n".join(context_parts) +
             "\n\n"
-            f"输出格式（严格按以下 JSON 格式）：\n"
-            f'{{"severity": "critical"/"major"/"minor"/"pass", '
-            f'"summary": "一句话总结", '
-            f'"detail": "详细报告"}}\n\n'
-            f"等级定义：\n"
-            f"- critical: 安全漏洞（密钥硬编码/SQL注入/eval/可被外部利用的问题）\n"
-            f"- major: 兼容性问题（改签名未更新调用方/API 破坏性变更）\n"
-            f"- minor: 代码质量问题（缺少异常处理/命名不规范/可优化）\n"
-            f"- pass: 无问题"
+            "输出格式（严格按以下 JSON 格式）：\n"
+            '{"severity": "critical"/"major"/"minor"/"pass", '
+            '"summary": "一句话总结", '
+            '"detail": "详细报告"}\n\n'
+            "等级定义：\n"
+            "- critical: 安全漏洞（密钥硬编码/SQL注入/eval/可被外部利用的问题）\n"
+            "- major: 兼容性问题（改签名未更新调用方/API 破坏性变更）\n"
+            "- minor: 代码质量问题（缺少异常处理/命名不规范/可优化）\n"
+            "- pass: 无问题"
         )
 
         task_input = {"description": f"审查 {file_path}", "prompt": prompt, "agent_type": "review",

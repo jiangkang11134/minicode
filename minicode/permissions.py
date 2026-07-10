@@ -9,9 +9,10 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 # Auto mode integration
 from minicode.auto_mode import AutoModeChecker, PermissionMode, get_mode_state
@@ -88,7 +89,7 @@ def _is_within_directory(root: str, target: str) -> bool:
             or target_str.startswith(root_str + "\\")
             or target_str.startswith(root_str + "/")
         )
-    
+
     # Unix: direct string comparison (paths already normalized)
     root_str = root.rstrip(os.sep)
     return target == root_str or target.startswith(root_str + os.sep)
@@ -234,9 +235,9 @@ def _write_permission_store(store: dict[str, Any]) -> None:
         store: 包含权限配置的字典，结构为 {str: list}。
     """
     import tempfile
-    
+
     MINI_CODE_PERMISSIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # 写入临时文件
     fd, tmp_path = tempfile.mkstemp(
         dir=MINI_CODE_PERMISSIONS_PATH.parent,
@@ -395,16 +396,16 @@ class PermissionManager:
             RuntimeError: 如果路径访问被拒绝。
         """
         normalized_target = _normalize_path(target_path)
-        
+
         # Fast path: check workspace root first (most common case)
         # workspace_root is already normalized, so no need for Path.resolve() again
         if _is_within_directory(self.workspace_root, normalized_target):
             return
-        
+
         # Check denial sets first (fail fast)
         if normalized_target in self.session_denied_paths or _matches_directory_prefix(normalized_target, self.denied_directory_prefixes):
             raise RuntimeError(f"Access denied for path outside cwd: {normalized_target}")
-        
+
         # Check approval sets
         if normalized_target in self.session_allowed_paths or _matches_directory_prefix(normalized_target, self.allowed_directory_prefixes):
             return
@@ -412,7 +413,7 @@ class PermissionManager:
             raise RuntimeError(f"Access denied for path outside cwd: {normalized_target}")
         if normalized_target in self.session_allowed_paths or _matches_directory_prefix(normalized_target, self.allowed_directory_prefixes):
             return
-        
+
         # Auto mode risk assessment for path access
         assessment = self.auto_checker.assess_risk("path_access", {"path": normalized_target, "intent": intent})
         if assessment.action == "approve":
@@ -504,7 +505,7 @@ class PermissionManager:
             raise RuntimeError(f"Command denied: {signature}")
         if signature in self.session_allowed_commands or signature in self.allowed_command_patterns:
             return
-        
+
         # Auto mode risk assessment for dangerous commands
         assessment = self.auto_checker.assess_risk("run_command", {"command": [command] + args})
         if assessment.action == "approve":
@@ -586,7 +587,7 @@ class PermissionManager:
             or normalized_target in self.allowed_edit_patterns
         ):
             return
-        
+
         # Auto mode risk assessment for file edits
         assessment = self.auto_checker.assess_risk("edit_file", {"path": normalized_target})
         if assessment.action == "approve":

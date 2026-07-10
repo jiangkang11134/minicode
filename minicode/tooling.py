@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from minicode.logging_config import get_logger, log_tool_execution
 

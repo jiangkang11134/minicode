@@ -9,9 +9,10 @@ from __future__ import annotations
 import random
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # 常量

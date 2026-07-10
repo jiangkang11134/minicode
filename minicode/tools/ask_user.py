@@ -54,4 +54,4 @@ ask_user_tool = ToolDefinition(
     input_schema={"type": "object", "properties": {"question": {"type": "string"}}, "required": ["question"]},
     validator=_validate,
     run=_run,
-)  # 
+)  #

@@ -256,14 +256,14 @@ def _render_screen(args: TtyAppArgs, state: ScreenState) -> None:
         args: 终端应用参数，包含运行时、工具、权限等信息。
         state: 当前屏幕状态，包含输入、会话记录、待审批等状态。
     """  # global _last_render_hash, _last_render_time
-    
+
     # Quick check: skip render if nothing changed and within throttle
     current_hash = _compute_render_hash(args, state)
     now = time.monotonic()
-    if (current_hash == _last_render_hash 
+    if (current_hash == _last_render_hash
             and now - _last_render_time < 0.016):  # ~60fps cap
         return
-    
+
     background_tasks = list_background_tasks()
 
     # 获取上下文帮助
@@ -343,11 +343,11 @@ def _render_screen(args: TtyAppArgs, state: ScreenState) -> None:
 
     # Footer (cached)
     buf.append(_render_footer_cached(state.status, True, has_skills, background_tasks))
-    
+
     # 上下文帮助行
     if contextual_help:
         buf.append(f"\n{SUBTLE}{contextual_help}{RESET}")
-    
+
     output = "".join(buf)
     sys.stdout.write(output)
     sys.stdout.flush()

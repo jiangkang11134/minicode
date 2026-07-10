@@ -16,7 +16,7 @@ Inspired by Claude Code's markdown rendering quality.
 from __future__ import annotations
 
 import re
-from typing import Match
+from re import Match
 
 # ---------------------------------------------------------------------------
 # ANSI escape codes
@@ -180,16 +180,16 @@ def _highlight_code(line: str, lang: str = "") -> str:
     """
     if not lang:
         return f"{CODE_BG}{DIM} {line} {RESET}"
-    
+
     keywords = _KEYWORDS.get(lang.lower(), set())
     result = []
     last_end = 0
-    
+
     for match in _RE_SYNTAX.finditer(line):
         # Add any plain text before this match
         if match.start() > last_end:
             result.append(f"{CODE_BG}{DIM}{line[last_end:match.start()]}{RESET}")
-        
+
         if match.group("comment"):
             result.append(f"{CODE_BG}{SYN_COMMENT}{match.group('comment')}{RESET}")
         elif match.group("string"):
@@ -216,17 +216,17 @@ def _highlight_code(line: str, lang: str = "") -> str:
             result.append(f"{CODE_BG}{SYN_PUNCTUATION}{match.group('punctuation')}{RESET}")
         else:
             result.append(f"{CODE_BG}{DIM}{match.group(0)}{RESET}")
-        
+
         last_end = match.end()
-    
+
     # Add any remaining plain text
     if last_end < len(line):
         result.append(f"{CODE_BG}{DIM}{line[last_end:]}{RESET}")
-    
+
     # If no matches were found, return the whole line dimmed
     if not result:
         return f"{CODE_BG}{DIM} {line} {RESET}"
-    
+
     return "".join(result)
 
 
@@ -303,7 +303,7 @@ def render_markdownish(input_text: str) -> str:
     cached = _md_cache.get(content_hash)
     if cached is not None:
         return cached
-    
+
     lines = input_text.split("\n")
     in_code_block = False
     code_lang = ""
@@ -404,7 +404,7 @@ def render_markdownish(input_text: str) -> str:
         result_lines.append(formatted)
 
     result = "\n".join(result_lines)
-    
+
     # Cache management
     if len(_md_cache) >= _MD_CACHE_MAX:
         # Evict oldest half (simple strategy)
@@ -412,5 +412,5 @@ def render_markdownish(input_text: str) -> str:
         for k in keys[:len(keys) // 2]:
             del _md_cache[k]
     _md_cache[content_hash] = result
-    
+
     return result

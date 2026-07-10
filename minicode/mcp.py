@@ -79,20 +79,20 @@ def _sanitize_tool_segment(value: str) -> str:
 def _validate_mcp_command(command: str) -> None:
     """验证 MCP 命令的合法性"""
     # from pathlib import Path
-    
+
     normalized = Path(command).resolve().as_posix()
-    
+
     # 不允许路径遍历字符
     if '..' in normalized or '~' in normalized:
         raise RuntimeError("Invalid MCP command: contains path traversal characters")
-    
+
     # 提取命令的基本名称，剥离 Windows 可执行后缀（.exe/.cmd/.bat）
     base_command = Path(command).name.lower()
     for _exec_ext in _WIN_EXEC_EXTS:
         if base_command.endswith(_exec_ext):
             base_command = base_command[: -len(_exec_ext)]
             break
-    
+
     # 如果是绝对路径，需要额外验证
     if Path(command).is_absolute():
         # 检查是否在常见的系统目录中
@@ -116,16 +116,16 @@ def _validate_mcp_command(command: str) -> None:
                 'C:\\Program Files (x86)',
                 'C:\\Windows\\System32',
             ])
-        
+
         is_in_allowed_dir = any(normalized.lower().startswith(d.lower()) for d in allowed_system_dirs)
-        
+
         # 不在允许的系统目录且不在白名单中
         if not is_in_allowed_dir and base_command not in ALLOWED_COMMANDS:
             raise RuntimeError(
                 f"MCP command \"{command}\" is not in the allowed list. "
                 f"Use a whitelisted command or place the executable in a standard system directory."
             )
-        
+
         # 禁止危险的系统 shell
         dangerous_shells = ['cmd.exe', 'command.com', 'powershell.exe', 'pwsh.exe']
         if any(normalized.lower().endswith(d) for d in dangerous_shells):
@@ -134,7 +134,7 @@ def _validate_mcp_command(command: str) -> None:
                 f"Direct execution of shells is not allowed for security reasons."
             )
         return
-    
+
     # 相对路径必须在白名单中
     if base_command not in ALLOWED_COMMANDS:
         raise RuntimeError(
@@ -311,7 +311,7 @@ class StdioMcpClient:
         self._tools_cache: list[dict[str, Any]] | None = None
         self._resources_cache: list[dict[str, Any]] | None = None
         self._prompts_cache: list[dict[str, Any]] | None = None
-    
+
     @property
     def is_started(self) -> bool:
         """检查服务器是否已成功启动。"""
@@ -346,11 +346,11 @@ class StdioMcpClient:
         """
         if self._started:
             return
-        
+
         if self._start_error is not None and self.process is None:
             # Previous attempt failed — reset for retry
             self._start_error = None
-        
+
         last_error: Exception | None = None
         for protocol in self._protocol_candidates():
             try:
@@ -372,10 +372,10 @@ class StdioMcpClient:
             except Exception as error:  # noqa: BLE001
                 last_error = error
                 self.close()
-        
+
         self._start_error = str(last_error or f'Failed to connect MCP server "{self.server_name}".')
         raise RuntimeError(self._start_error)
-    
+
     def _ensure_started(self) -> None:
         """确保在发起请求前服务器已启动。
 
@@ -587,16 +587,16 @@ class StdioMcpClient:
         """
         if self.process is None or self.process.stdin is None:
             raise RuntimeError(f'MCP server "{self.server_name}" is not running.')
-        
+
         payload_bytes = json.dumps(message, ensure_ascii=False).encode("utf-8")
-        
+
         if self.protocol == "newline-json":
             self.process.stdin.write(payload_bytes + b"\n")
             self.process.stdin.flush()
             self._ensure_stdout_thread()
             return
-        
-        header = f"Content-Length: {len(payload_bytes)}\r\n\r\n".encode("utf-8")
+
+        header = f"Content-Length: {len(payload_bytes)}\r\n\r\n".encode()
         self.process.stdin.write(header + payload_bytes)
         self.process.stdin.flush()
         self._ensure_stdout_thread()
@@ -727,7 +727,7 @@ class StdioMcpClient:
             self._pending.clear()
             for queue in pending:
                 queue.put({"error": {"message": f'MCP server "{self.server_name}" closed before completing the request.'}})
-        
+
         if self.process is not None:
             try:
                 # 跨平台进程终止
@@ -769,7 +769,7 @@ class StdioMcpClient:
                 pass  # 进程可能已经退出
             finally:
                 self.process = None
-        
+
         self.protocol = None
         self._stdout_thread = None
         self._stderr_thread = None
@@ -813,7 +813,7 @@ def create_mcp_backed_tools(*, cwd: str, mcp_servers: dict[str, dict[str, Any]])
 
         client = StdioMcpClient(server_name, config, cwd)
         clients.append(client)
-        
+
         # Register server with "pending" status — will be connected lazily
         servers.append(
             asdict(
@@ -826,15 +826,15 @@ def create_mcp_backed_tools(*, cwd: str, mcp_servers: dict[str, dict[str, Any]])
                 )
             )
         )
-        
+
         # Eagerly discover tools/resources/prompts on first use via
         # the lazy client. Register placeholder tools now that will
         # resolve to the actual MCP tool on first call.
-        # 
+        #
         # We register a single "gateway" tool per server that triggers
         # lazy init, plus we'll discover and register actual tools
         # after the first successful connection.
-        # 
+        #
         # For simplicity, we still try to discover tools at creation
         # time but don't fail if the server can't start yet.
         try:

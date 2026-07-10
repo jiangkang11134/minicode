@@ -16,7 +16,7 @@ import json
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -1573,7 +1573,7 @@ def _fmt_ts(ts: float, fmt: str) -> str:
     返回:
         格式化后的时间字符串
     """
-    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime(fmt)
+    return datetime.fromtimestamp(ts, tz=UTC).strftime(fmt)
 
 
 def format_session_list(sessions: list[SessionMetadata]) -> str:

@@ -809,7 +809,7 @@ class MemoryEntry:
     def invalidate_tokens(self) -> None:
         """清空分词缓存，在条目内容变更后调用。"""
         self._cached_tokens = None
-    
+
     def to_dict(self) -> dict[str, Any]:
         """将记忆条目转换为可序列化的字典。
 
@@ -834,7 +834,7 @@ class MemoryEntry:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "MemoryEntry":
+    def from_dict(cls, data: dict[str, Any]) -> MemoryEntry:
         """从字典创建记忆条目（反序列化）。
 
         【为什么需要】从 JSON 文件加载记忆数据时，将字典还原为 MemoryEntry 对象。
@@ -940,7 +940,7 @@ class MemoryFile:
     def size_bytes(self) -> int:
         """估算当前条目内容占用的字节数，用于容量检查。"""
         return sum(len(e.content) for e in self.entries)
-    
+
     def add_entry(self, entry: MemoryEntry) -> None:
         """添加记忆条目，维护索引并执行容量限制。
 
@@ -975,7 +975,7 @@ class MemoryFile:
         self._category_index[cat].append(entry)
         self._tokens_cache[entry.id] = entry.get_tokens()
         self._enforce_limits()
-    
+
     def update_entry(self, entry_id: str, content: str) -> bool:
         """通过 id 索引更新已有条目的内容。
 
@@ -998,7 +998,7 @@ class MemoryFile:
         entry.invalidate_tokens()
         self._tokens_cache[entry.id] = entry.get_tokens()
         return True
-    
+
     def delete_entry(self, entry_id: str) -> bool:
         """通过 id 索引删除条目。
 
@@ -1025,7 +1025,7 @@ class MemoryFile:
             self._category_index[cat].remove(entry)
         self._tokens_cache.pop(entry_id, None)
         return True
-    
+
     def get_entries_by_category(self, category: str) -> list[MemoryEntry]:
         """通过分类索引获取指定分类的条目列表。
 
@@ -1037,7 +1037,7 @@ class MemoryFile:
         """
         self._ensure_cache_valid()
         return list(self._category_index.get(category, []))
-    
+
     def search(self, query: str, active_domains: list[str] | None = None) -> list[MemoryEntry]:
         """使用 BM25 + 领域相关性对条目进行搜索排序。
 
@@ -1141,7 +1141,7 @@ class MemoryFile:
         for _, entry in scored[:10]:
             entry.usage_count += 1
         return [entry for _, entry in scored]
-    
+
     def _enforce_limits(self) -> None:
         """超过容量限制时移除最旧条目。
 
@@ -1161,7 +1161,7 @@ class MemoryFile:
         # 检查体积限制
         while self.size_bytes > self.max_size_bytes and self.entries:
             self.entries.pop(0)
-    
+
     def format_as_markdown(self, include_header: bool = True) -> str:
         """将记忆文件格式化为 MEMORY.md 内容文本。
 
@@ -1202,7 +1202,7 @@ class MemoryFile:
             if entry.category not in categories:
                 categories[entry.category] = []
             categories[entry.category].append(entry)
-        
+
         for category, entries in categories.items():
             lines.append(f"## {category.title()}")
             lines.append("")
@@ -1232,7 +1232,7 @@ class MemoryPaths:
     local_memory: Path
 
     @classmethod
-    def for_workspace(cls, workspace: str) -> "MemoryPaths":
+    def for_workspace(cls, workspace: str) -> MemoryPaths:
         """根据工作区路径创建各作用域的 MemoryPaths 实例。
 
         参数:
@@ -1297,7 +1297,7 @@ class MemoryManager:
             MemoryScope.LOCAL: MemoryFile(scope=MemoryScope.LOCAL),
         }
         self._load_all()
-    
+
     def _load_all(self) -> None:
         """加载所有作用域的记忆文件。
 
@@ -1307,7 +1307,7 @@ class MemoryManager:
         for scope in MemoryScope:
             self._load_scope(scope)
             self._auto_recover_scope(scope)
-    
+
     def _auto_recover_scope(self, scope: MemoryScope) -> None:
         """检查作用域的完整性，发现问题时自动修复。
 
@@ -1326,7 +1326,7 @@ class MemoryManager:
                 len(result["issues"]),
             )
             self._recover_scope(scope)
-    
+
     def _recover_scope(self, scope: MemoryScope) -> None:
         """对存在完整性问题的作用域执行恢复。
 
@@ -1382,7 +1382,7 @@ class MemoryManager:
             removed_count,
             fixed_count,
         )
-    
+
     def _load_scope(self, scope: MemoryScope) -> None:
         """从磁盘加载指定作用域的记忆文件。
 
@@ -1395,16 +1395,16 @@ class MemoryManager:
         path = self._get_scope_path(scope)
         memory_md = path / "MEMORY.md"
         memory_json = path / "memory.json"
-        
+
         if not memory_md.exists() and not memory_json.exists():
             return
-        
+
         # 若存在则加载 JSON 元数据
         if memory_json.exists():
             try:
                 raw_text = memory_json.read_text(encoding="utf-8")
                 data = json.loads(raw_text)
-                
+
                 is_valid, errors = _validate_memory_data(data)
                 if is_valid:
                     for entry_data in data.get("entries", []):
@@ -1434,12 +1434,12 @@ class MemoryManager:
                 logger.error(
                     "Missing key in scope %s data: %s", scope.value, e
                 )
-        
+
         # 若存在则从 MEMORY.md 加载
         if memory_md.exists():
             content = memory_md.read_text(encoding="utf-8")
             self._parse_memory_md(content, scope)
-    
+
     def _parse_memory_md(self, content: str, scope: MemoryScope) -> None:
         """解析 MEMORY.md 文件内容为 MemoryEntry 对象列表。
 
@@ -1453,20 +1453,20 @@ class MemoryManager:
         lines = content.split("\n")
         current_category = "general"
         entry_counter = 0
-        
+
         for line in lines:
             line = line.strip()
-            
+
             # 跳过标题行和元数据行
             if line.startswith("#") or line.startswith("*") or not line:
                 if line.startswith("## "):
                     current_category = line[3:].strip().lower()
                 continue
-            
+
             # 解析列表项
             if line.startswith("- "):
                 entry_content = line[2:]
-                
+
                 # 提取标签
                 tags = []
                 if "`" in entry_content:
@@ -1475,7 +1475,7 @@ class MemoryManager:
                     for tag_match in tag_matches:
                         tags.extend(tag_match.split())
                     entry_content = re.sub(r"`[^`]+`", "", entry_content).strip()
-                
+
                 entry_counter += 1
                 entry = MemoryEntry(
                     id=f"{scope.value}-{entry_counter}",
@@ -1488,7 +1488,7 @@ class MemoryManager:
         # 基于 Markdown 加载完成后重建索引
         if self.memories[scope].entries:
             self.memories[scope]._rebuild_indices()
-    
+
     def _get_scope_path(self, scope: MemoryScope) -> Path:
         """获取指定作用域的磁盘路径。"""
         if scope == MemoryScope.USER:
@@ -1502,7 +1502,7 @@ class MemoryManager:
         """确保作用域的目录存在，不存在则创建。"""
         path = self._get_scope_path(scope)
         path.mkdir(parents=True, exist_ok=True)
-    
+
     def add_entry(
         self,
         scope: MemoryScope,
@@ -1556,7 +1556,7 @@ class MemoryManager:
         self.memories[scope].add_entry(entry)
         self._save_scope(scope)
         return entry
-    
+
     def update_entry(self, scope: MemoryScope, entry_id: str, content: str) -> bool:
         """更新指定作用域中的一条记忆条目。
 
@@ -1782,7 +1782,7 @@ class MemoryManager:
         recency_bonus = 1.0 / (1.0 + age_hours / 24.0) * 0.5
 
         return bm25 + substring_score + tag_score + usage_bonus + recency_bonus
-    
+
     def get_relevant_context(
         self,
         max_entries: int = 20,
@@ -1840,19 +1840,19 @@ class MemoryManager:
             if scoped_parts:
                 return "\n\n".join(scoped_parts)
             return ""
-        
+
         parts = []
         total_tokens = 0
-        
+
         # 优先级顺序：本地 > 项目 > 用户
         for scope in [MemoryScope.LOCAL, MemoryScope.PROJECT, MemoryScope.USER]:
             memory = self.memories[scope]
             if not memory.entries:
                 continue
-            
+
             formatted = memory.format_as_markdown(include_header=True)
             tokens = estimate_tokens(formatted)
-            
+
             if total_tokens + tokens <= max_tokens:
                 parts.append(formatted)
                 total_tokens += tokens
@@ -1862,16 +1862,16 @@ class MemoryManager:
                 partial_entries = memory.entries[-max_entries:]
                 partial_memory = MemoryFile(scope=scope, entries=partial_entries)
                 formatted = partial_memory.format_as_markdown(include_header=True)
-                
+
                 if estimate_tokens(formatted) <= remaining_tokens:
                     parts.append(formatted)
                 break
-        
+
         if not parts:
             return ""
-        
+
         return "\n\n".join(parts)
-    
+
     def _save_scope(self, scope: MemoryScope) -> None:
         """将作用域记忆持久化到磁盘（原子写入防损坏）。
 
@@ -1904,7 +1904,7 @@ class MemoryManager:
         # 同时更新 MEMORY.md 便于人类阅读（原子写入）
         memory_md = path / "MEMORY.md"
         self._atomic_write(memory_md, self.memories[scope].format_as_markdown())
-    
+
     @staticmethod
     def _atomic_write(target: Path, content: str) -> None:
         """原子写入文件：先写临时文件，再通过 os.replace() 替换。
@@ -1942,7 +1942,7 @@ class MemoryManager:
             except OSError:
                 pass
             raise
-    
+
     def get_stats(self) -> dict[str, Any]:
         """获取各作用域的记忆统计信息。
 
@@ -2007,7 +2007,7 @@ class MemoryManager:
             lines.append(f"Curator Insights: {insight_count} synthesized")
 
         return "\n".join(lines)
-    
+
     def clear_scope(self, scope: MemoryScope) -> None:
         """清空指定作用域的所有条目。
 
@@ -2486,10 +2486,10 @@ def inject_memory_into_prompt(
         注入了记忆上下文的系统提示词
     """
     memory_context = memory_manager.get_relevant_context(max_tokens=max_tokens)
-    
+
     if not memory_context:
         return system_prompt
-    
+
     return f"""{system_prompt}
 
 ## Project Memory & Context

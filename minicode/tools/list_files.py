@@ -64,4 +64,4 @@ list_files_tool = ToolDefinition(
     input_schema={"type": "object", "properties": {"path": {"type": "string"}}},
     validator=_validate,
     run=_run,
-)  # 
+)  #

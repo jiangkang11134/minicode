@@ -6,9 +6,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from math import ceil
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from minicode.decision_audit import DecisionAuditor, DecisionOutcome
 from minicode.layered_context import ContextBuilder, LayeredContext

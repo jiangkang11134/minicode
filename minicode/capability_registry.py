@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import inspect
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from minicode.logging_config import get_logger
 

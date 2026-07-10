@@ -49,4 +49,4 @@ write_file_tool = ToolDefinition(
     input_schema={"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}}, "required": ["path", "content"]},
     validator=_validate,
     run=_run,
-)  # 
+)  #

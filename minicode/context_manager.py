@@ -164,25 +164,25 @@ def estimate_tokens(text: str) -> int:
     """
     if not text:
         return 0
-    
+
     # 缓存查找（短文本优先缓存）
     cache_key = text if len(text) < 256 else hash(text)  # 长文本用 hash 作为 key
     cached = _token_cache.get(cache_key)
     if cached is not None:
         return cached
-    
+
     # 使用正则表达式快速统计 CJK 字符数量
     cjk_count = len(_CJK_PATTERN.findall(text))
-    
+
     # CJK 字符约 1.5 字符/token，英文约 4 字符/token
     ascii_chars = len(text) - cjk_count
-    
+
     result = max(1, int(cjk_count / 1.5 + ascii_chars / 4.0))
-    
+
     # 缓存结果（防止无限增长）
     if len(_token_cache) < _TOKEN_CACHE_MAX:
         _token_cache[cache_key] = result
-    
+
     return result
 
 
@@ -224,17 +224,17 @@ def estimate_message_tokens(message: dict[str, Any]) -> int:
         tokens += 6  # Tool result overhead
     elif role == "assistant_progress":
         tokens += 3
-    
+
     # Content tokens
     content = message.get("content", "")
     if isinstance(content, str):
         tokens += estimate_tokens(content)
-    
+
     # Tool call input/output
     if "input" in message:
         input_str = json.dumps(message["input"]) if isinstance(message["input"], dict) else str(message["input"])
         tokens += estimate_tokens(input_str)
-    
+
     return tokens
 
 
@@ -434,11 +434,11 @@ def _extract_from_messages(messages: list[dict[str, Any]]) -> _ExtractedInfo:
         tool_names、code_snippets、decisions 等字段的 _ExtractedInfo 实例。
     """
     info = _ExtractedInfo()
-    
+
     for msg in messages:
         role = msg.get("role", "")
         content = msg.get("content", "")
-        
+
         if role == "user" and content.strip():
             # Extract user intent — keep more context for short queries,
             # truncate long paste-heavy messages
@@ -448,10 +448,10 @@ def _extract_from_messages(messages: list[dict[str, Any]]) -> _ExtractedInfo:
             if len(preview) > 200:
                 preview = preview[:200] + "..."
             info.user_intents.append(preview)
-            
+
         elif role == "assistant" and content.strip():
             text = content.strip()
-            
+
             # Extract decisions/conclusions
             sentences = text.replace("\n", " ").split(". ")
             for sentence in sentences:
@@ -459,35 +459,35 @@ def _extract_from_messages(messages: list[dict[str, Any]]) -> _ExtractedInfo:
                     decision = sentence.strip()[:180]
                     if decision and decision not in info.decisions:
                         info.decisions.append(decision)
-            
+
             # Extract code snippets from assistant responses
             for match in _CODE_FENCE_RE.finditer(text):
                 snippet = match.group(1).strip()
                 if len(snippet) >= 20 and len(info.code_snippets) < 5:
                     info.code_snippets.append(snippet[:300])
-            
+
             # General conclusion preview
             preview = text[:200].replace("\n", " ")
             info.assistant_conclusions.append(preview)
-            
+
         elif role == "assistant_tool_call":
             tool_name = msg.get("toolName", "unknown")
             info.tool_names.append(tool_name)
-            
+
             # Extract file paths from edit/write tools
             if tool_name in _EDIT_TOOLS:
                 inp = msg.get("input", {})
                 path = inp.get("path") or inp.get("filePath", "")
                 if path:
                     info.file_paths.add(path)
-            
+
             # Extract searched patterns from grep/search tools
             if tool_name in _SEARCH_TOOLS:
                 inp = msg.get("input", {})
                 pattern = inp.get("pattern") or inp.get("query", "")
                 if pattern:
                     info.file_paths.add(f"search:{pattern[:80]}")
-            
+
             # Extract command names from run_command
             if tool_name in _COMMAND_TOOLS:
                 inp = msg.get("input", {})
@@ -496,28 +496,28 @@ def _extract_from_messages(messages: list[dict[str, Any]]) -> _ExtractedInfo:
                     cmd_name = cmd.split()[0] if cmd.split() else ""
                     if cmd_name:
                         info.key_tool_results.append(f"ran: {cmd_name}")
-            
+
         elif role == "tool_result":
             tool_name = msg.get("toolName", "")
             is_error = msg.get("isError", False)
-            
+
             # Preserve error results (highest priority tool info)
             if is_error:
                 error_preview = content.strip()[:150].replace("\n", " ")
                 info.key_tool_results.append(f"ERROR({tool_name}): {error_preview}")
-            
+
             # Preserve edit confirmations with file paths
             elif tool_name in _EDIT_TOOLS and content.strip():
                 success_preview = content.strip()[:100].replace("\n", " ")
                 info.key_tool_results.append(f"{tool_name} ok: {success_preview}")
-            
+
             # Extract file paths from read_file results
             elif tool_name in _READ_TOOLS and content.strip():
                 # Check if content references a file path
                 first_line = content.strip().split("\n")[0][:100]
                 if "/" in first_line or "\\" in first_line:
                     info.file_paths.add(first_line.strip())
-    
+
     return info
 
 
@@ -540,14 +540,14 @@ def _build_layered_summary(info: _ExtractedInfo, max_summary_tokens: int = 2000)
         格式化后的分层摘要字符串。
     """
     lines: list[str] = []
-    
+
     # Budget allocations per layer (as fraction of total)
     layer_budgets = [0.35, 0.20, 0.15, 0.15, 0.10, 0.05]
-    
+
     def _remaining_budget() -> int:
         """计算当前剩余的 token 预算。"""
         return max(0, max_summary_tokens - estimate_tokens("\n".join(lines)))
-    
+
     # Layer 1: User intents (highest priority)
     if info.user_intents:
         budget = int(max_summary_tokens * layer_budgets[0])
@@ -557,34 +557,34 @@ def _build_layered_summary(info: _ExtractedInfo, max_summary_tokens: int = 2000)
                 lines.append(f"  ... and {len(info.user_intents) - info.user_intents.index(intent)} more")
                 break
             lines.append(f"- {intent}")
-    
+
     # Layer 2: Decisions and file paths
     has_decisions = bool(info.decisions)
     has_files = bool(info.file_paths)
     if has_decisions or has_files:
         budget = int(max_summary_tokens * (layer_budgets[0] + layer_budgets[1]))
-        
+
         if info.decisions:
             lines.append("## Key decisions:")
             for dec in info.decisions[:8]:
                 if estimate_tokens("\n".join(lines)) > budget:
                     break
                 lines.append(f"- {dec}")
-        
+
         if info.file_paths:
             # Separate real paths from search patterns
             real_paths = sorted(p for p in info.file_paths if not p.startswith("search:"))
             search_patterns = sorted(p[8:] for p in info.file_paths if p.startswith("search:"))
-            
+
             path_line = f"## Files: {', '.join(real_paths[:20])}"
             if len(real_paths) > 20:
                 path_line += f" (+{len(real_paths)-20} more)"
             if search_patterns:
                 path_line += f"\n## Searched: {', '.join(search_patterns[:5])}"
-            
+
             if estimate_tokens("\n".join(lines) + path_line) <= budget:
                 lines.append(path_line)
-    
+
     # Layer 3: Key tool results (errors + edits)
     if info.key_tool_results:
         budget = int(max_summary_tokens * sum(layer_budgets[:3]))
@@ -593,7 +593,7 @@ def _build_layered_summary(info: _ExtractedInfo, max_summary_tokens: int = 2000)
             if estimate_tokens("\n".join(lines)) > budget:
                 break
             lines.append(f"- {result}")
-    
+
     # Layer 4: Assistant conclusions
     if info.assistant_conclusions:
         budget = int(max_summary_tokens * sum(layer_budgets[:4]))
@@ -602,7 +602,7 @@ def _build_layered_summary(info: _ExtractedInfo, max_summary_tokens: int = 2000)
             if estimate_tokens("\n".join(lines)) > budget:
                 break
             lines.append(f"- {conc}")
-    
+
     # Layer 5: Code snippets (most selective)
     if info.code_snippets:
         budget = int(max_summary_tokens * sum(layer_budgets[:5]))
@@ -612,7 +612,7 @@ def _build_layered_summary(info: _ExtractedInfo, max_summary_tokens: int = 2000)
             if estimate_tokens("\n".join(lines) + snippet_line) > budget:
                 break
             lines.append(snippet_line)
-    
+
     # Layer 6: Tool usage summary (most compact)
     if info.tool_names:
         from collections import Counter
@@ -622,7 +622,7 @@ def _build_layered_summary(info: _ExtractedInfo, max_summary_tokens: int = 2000)
             for name, count in tool_counts.most_common()
         )
         lines.append(f"## Tools: {tool_summary}")
-    
+
     return "\n".join(lines)
 
 
@@ -645,7 +645,7 @@ def _summarize_removed_messages(messages: list[dict[str, Any]], max_summary_toke
     """
     if not messages:
         return ""
-    
+
     info = _extract_from_messages(messages)
     return _build_layered_summary(info, max_summary_tokens)
 
@@ -719,13 +719,13 @@ class ContextManager:
     messages: list[dict[str, Any]] = field(default_factory=list)
     compaction_history: list[dict[str, Any]] = field(default_factory=list)
     _token_cache: dict[int, int] = field(default_factory=dict, repr=False)  # id(msg) -> tokens
-    
+
     # 多级压缩支持
     _compaction_level: int = field(default_factory=lambda: 0)  # 0=无压缩, 1=轻微, 2=中等, 3=深度
-    
+
     # 多级压缩目标 (相对于 context window 的百分比)
     _COMPACTION_LEVELS = [0.70, 0.50, 0.30]  # 轻度/中度/深度
-    
+
     def __post_init__(self):
         """初始化后处理：如果未设置上下文窗口大小，则根据模型自动获取。"""
         if self.context_window == 0:
@@ -741,7 +741,7 @@ class ContextManager:
         """
         self.model = model
         self.context_window = get_model_context_window(model).context_window
-    
+
     def add_message(self, message: dict[str, Any]) -> None:
         """添加一条消息并更新跟踪状态。
 
@@ -754,7 +754,7 @@ class ContextManager:
         self.messages.append(message)
         # Cache token count immediately to avoid re-estimation in get_stats()
         self._token_cache[id(message)] = estimate_message_tokens(message)
-    
+
     def get_stats(self) -> ContextStats:
         """计算当前上下文统计信息。
 
@@ -768,12 +768,12 @@ class ContextManager:
             return ContextStats(
                 context_window=self.context_window,
             )
-        
+
         # Count tokens using cache when available
         system_tokens = 0
         conversation_tokens = 0
         tool_calls = 0
-        
+
         for msg in self.messages:
             msg_tokens = self._token_cache.get(id(msg))
             if msg_tokens is None:
@@ -783,16 +783,16 @@ class ContextManager:
                 system_tokens += msg_tokens
             else:
                 conversation_tokens += msg_tokens
-            
+
             if msg.get("role") == "assistant_tool_call":
                 tool_calls += 1
-        
+
         total_tokens = system_tokens + conversation_tokens
         usage_pct = (total_tokens / self.context_window * 100) if self.context_window > 0 else 0
-        
+
         is_near_limit = usage_pct >= 80  # Warning at 80%
         should_compact = usage_pct >= (AUTOCOMPACT_THRESHOLD * 100)
-        
+
         return ContextStats(
             total_tokens=total_tokens,
             context_window=self.context_window,
@@ -804,7 +804,7 @@ class ContextManager:
             is_near_limit=is_near_limit,
             should_compact=should_compact,
         )
-    
+
     def should_auto_compact(self) -> bool:
         """检查是否应触发自动压缩。
 
@@ -824,7 +824,7 @@ class ContextManager:
         threshold = max(0.60, threshold)  # Minimum 60%
         usage_pct = stats.usage_percentage
         return usage_pct >= (threshold * 100)
-    
+
     def compact_messages(self) -> list[dict[str, Any]]:
         """压缩消息以适配上下文窗口。
 
@@ -852,27 +852,27 @@ class ContextManager:
         stats = self.get_stats()
         if not stats.should_compact:
             return self.messages
-        
+
         # Get target based on compaction level
         target_pct = self._COMPACTION_LEVELS[min(self._compaction_level, 2)]
         target_tokens = int(self.context_window * target_pct)
-        
+
         # Always keep system prompt
         system_messages = [m for m in self.messages if m.get("role") == "system"]
         other_messages = [m for m in self.messages if m.get("role") != "system"]
-        
+
         # Phase 1: Remove progress messages (lowest priority — always safe to drop)
         filtered = [
             m for m in other_messages
             if m.get("role") != "assistant_progress"
         ]
-        
+
         current_tokens = estimate_messages_tokens(filtered)
         if current_tokens <= target_tokens:
             return self._finalize_compaction(
                 system_messages, other_messages, filtered, stats, target_tokens
             )
-        
+
         # Phase 2: Truncate large tool results in-place (adaptive threshold)
         # Use different thresholds based on tool type:
         # - Read-only tools: more aggressive truncation (they can be re-run)
@@ -882,17 +882,17 @@ class ContextManager:
         _EDIT_TOOL_TRUNCATE = 3000   # chars to keep for edit tool results
         _ERROR_TRUNCATE = 4000       # chars to keep for error results
         _DEFAULT_TRUNCATE = 2000     # default truncation threshold
-        
+
         for i, m in enumerate(filtered):
             if m.get("role") != "tool_result":
                 continue
             content = m.get("content", "")
             if not content or len(content) <= _DEFAULT_TRUNCATE:
                 continue
-            
+
             tool_name = m.get("toolName", "")
             is_error = m.get("isError", False)
-            
+
             # Select truncation threshold based on tool type
             if is_error:
                 threshold = _ERROR_TRUNCATE
@@ -902,10 +902,10 @@ class ContextManager:
                 threshold = _READ_TOOL_TRUNCATE
             else:
                 threshold = _DEFAULT_TRUNCATE
-            
+
             if len(content) <= threshold:
                 continue
-            
+
             # Smart truncation: head + tail with context line
             content_lines = content.split("\n")
             # Determine how many head/tail lines to keep based on threshold
@@ -913,13 +913,13 @@ class ContextManager:
             head_lines: list[str] = []
             tail_lines: list[str] = []
             head_chars = 0
-            
+
             for line in content_lines:
                 if head_chars + len(line) + 1 > keep_chars * 0.7:
                     break
                 head_lines.append(line)
                 head_chars += len(line) + 1
-            
+
             # Tail: last few lines
             tail_chars = 0
             for line in reversed(content_lines):
@@ -927,21 +927,21 @@ class ContextManager:
                     break
                 tail_lines.insert(0, line)
                 tail_chars += len(line) + 1
-            
+
             omitted = len(content_lines) - len(head_lines) - len(tail_lines)
             truncated_content = "\n".join(head_lines)
             if omitted > 0:
                 truncated_content += f"\n... [{omitted} lines truncated for compaction] ...\n"
             truncated_content += "\n".join(tail_lines)
-            
+
             filtered[i] = {**m, "content": truncated_content}
-        
+
         current_tokens = estimate_messages_tokens(filtered)
         if current_tokens <= target_tokens:
             return self._finalize_compaction(
                 system_messages, other_messages, filtered, stats, target_tokens
             )
-        
+
         # Phase 3: Compress tool_call + result pairs into inline summaries
         # Instead of simply deleting pairs, replace them with compact summaries
         # that preserve the semantic link between call and result.
@@ -951,21 +951,21 @@ class ContextManager:
         i = 0
         while i < len(filtered):
             msg = filtered[i]
-            
+
             # Look for tool_call + tool_result pairs to compress
             if (msg.get("role") == "assistant_tool_call" and
                     i + 1 < len(filtered) and
                     filtered[i + 1].get("role") == "tool_result"):
-                
+
                 call_msg = msg
                 result_msg = filtered[i + 1]
                 tool_name = call_msg.get("toolName", "unknown")
                 result_msg.get("content", "")
                 is_error = result_msg.get("isError", False)
-                
+
                 # Build a compact summary preserving the key information
                 summary = self._compress_tool_pair(call_msg, result_msg)
-                
+
                 # Replace the pair with a single compressed message
                 compressed.append({
                     "role": "assistant",
@@ -975,13 +975,13 @@ class ContextManager:
             else:
                 compressed.append(msg)
                 i += 1
-        
+
         current_tokens = estimate_messages_tokens(compressed)
         if current_tokens <= target_tokens:
             return self._finalize_compaction(
                 system_messages, other_messages, compressed, stats, target_tokens
             )
-        
+
         # Phase 4: Priority-based removal (oldest first, lowest priority removed first)
         # Priority order (highest kept, lowest removed first):
         #   0 = user messages (keep longest — encode intent)
@@ -993,32 +993,32 @@ class ContextManager:
             "assistant_tool_call": 2,     # Medium — should have been compressed in Phase 3
             "tool_result": 3,             # Low — should have been compressed in Phase 3
         }
-        
+
         # Protect recent messages (last 6) from removal
         PROTECTED_RECENT = 6
-        
+
         while estimate_messages_tokens(compressed) > target_tokens and len(compressed) > MIN_MESSAGES_TO_KEEP:
             # Find the message with the lowest priority (highest number) in the removable range
             removable_end = max(MIN_MESSAGES_TO_KEEP, len(compressed) - PROTECTED_RECENT)
             best_idx = None
             best_priority = -1
-            
+
             for idx in range(removable_end):
                 role = compressed[idx].get("role", "")
                 priority = PRIORITY.get(role, 1)
                 if priority > best_priority:
                     best_priority = priority
                     best_idx = idx
-            
+
             if best_idx is None:
                 break
-            
+
             del compressed[best_idx]
-        
+
         return self._finalize_compaction(
             system_messages, other_messages, compressed, stats, target_tokens
         )
-    
+
     @staticmethod
     def _compress_tool_pair(call_msg: dict[str, Any], result_msg: dict[str, Any]) -> str:
         """将 tool_call 和 tool_result 消息对压缩为紧凑的内联摘要。
@@ -1041,12 +1041,12 @@ class ContextManager:
         inp = call_msg.get("input", {})
         result_content = result_msg.get("content", "")
         is_error = result_msg.get("isError", False)
-        
+
         # Error results: preserve the error message
         if is_error:
             error_text = result_content.strip()[:200].replace("\n", " ")
             return f"[Tool {tool_name} ERROR: {error_text}]"
-        
+
         # Tool-specific compression
         if tool_name in _EDIT_TOOLS:
             path = inp.get("path") or inp.get("filePath", "unknown")
@@ -1055,7 +1055,7 @@ class ContextManager:
                 edits = inp.get("edits", [])
                 return f"[Edited {path}: {len(edits)} changes applied]"
             return f"[Edited {path}: ok]"
-        
+
         if tool_name in _READ_TOOLS:
             path = inp.get("path") or inp.get("filePath", "")
             if path:
@@ -1063,13 +1063,13 @@ class ContextManager:
                 line_count = result_content.count("\n") + 1
                 return f"[Read {path}: {line_count} lines]"
             return f"[{tool_name}: completed]"
-        
+
         if tool_name in _SEARCH_TOOLS:
             pattern = inp.get("pattern") or inp.get("query", "")
             # Count matches from result
             match_lines = [line for line in result_content.split("\n") if line.strip() and not line.startswith("#")]
             return f"[Searched '{pattern[:50]}': {len(match_lines)} results]"
-        
+
         if tool_name in _COMMAND_TOOLS:
             cmd = inp.get("command", "")
             cmd_name = cmd.split()[0] if cmd.split() else "command"
@@ -1081,13 +1081,13 @@ class ContextManager:
                         exit_info = f" ({line.strip()[:50]})"
                         break
             return f"[Ran {cmd_name}{exit_info}]"
-        
+
         # Generic compression: tool name + brief result
         brief = result_content.strip()[:100].replace("\n", " ")
         if brief:
             return f"[{tool_name}: {brief}]"
         return f"[{tool_name}: completed]"
-    
+
     def _finalize_compaction(
         self,
         system_messages: list[dict[str, Any]],
@@ -1115,10 +1115,10 @@ class ContextManager:
         removed_set = set(id(m) for m in filtered)
         removed_messages = [m for m in original_other if id(m) not in removed_set]
         summary_text = _summarize_removed_messages(removed_messages)
-        
+
         removed_count = len(original_other) - len(filtered)
         after_pct = estimate_messages_tokens(filtered) / self.context_window * 100 if self.context_window > 0 else 0
-        
+
         # Add compaction marker with content summary
         compaction_marker = {
             "role": "system",
@@ -1129,10 +1129,10 @@ class ContextManager:
                 + (f"\nSummary of removed conversation:\n{summary_text}" if summary_text else "")
             ),
         }
-        
+
         # Build final message list
         compacted = system_messages + [compaction_marker] + filtered
-        
+
         # Record compaction
         self.compaction_history.append({
             "timestamp": time.time(),
@@ -1141,10 +1141,10 @@ class ContextManager:
             "messages_removed": len(self.messages) - len(compacted),
             "compaction_level": self._compaction_level,
         })
-        
+
         # Increment compaction level for next compaction (more aggressive)
         self._compaction_level = min(self._compaction_level + 1, 3)
-        
+
         self.messages = compacted
         # Rebuild token cache: discard stale entries, keep only retained msgs
         self._token_cache = {
@@ -1152,7 +1152,7 @@ class ContextManager:
             for m in compacted
         }
         return compacted
-    
+
     def get_context_summary(self) -> str:
         """获取人类可读的上下文使用摘要。
 
@@ -1163,22 +1163,22 @@ class ContextManager:
             格式化的上下文摘要字符串，如 "Context: ✓ 45% (45,000/100,000 tokens, 12 msgs, 3 tools)"。
         """
         stats = self.get_stats()
-        
+
         if stats.messages_count == 0:
             return "Context: empty"
-        
+
         status = "✓"
         if stats.is_near_limit:
             status = "⚠"
         if stats.should_compact:
             status = "🔴"
-        
+
         return (
             f"Context: {status} {stats.usage_percentage:.0f}% "
             f"({stats.total_tokens:,}/{stats.context_window:,} tokens, "
             f"{stats.messages_count} msgs, {stats.tool_calls_count} tools)"
         )
-    
+
     def format_context_details(self) -> str:
         """获取详细的上下文信息，用于 /context 命令展示。
 
@@ -1190,7 +1190,7 @@ class ContextManager:
             格式化的多行详情字符串。
         """
         stats = self.get_stats()
-        
+
         lines = [
             "Context Window Usage",
             "=" * 50,
@@ -1203,12 +1203,12 @@ class ContextManager:
             f"Tool calls: {stats.tool_calls_count}",
             "",
         ]
-        
+
         if stats.should_compact:
             lines.append("⚠️  WARNING: Context is near capacity!")
             lines.append("Auto-compaction will trigger soon.")
             lines.append("")
-        
+
         if self.compaction_history:
             lines.append("Compaction History:")
             for comp in self.compaction_history[-3:]:  # Last 3
@@ -1217,7 +1217,7 @@ class ContextManager:
                     f"  {ts}: {comp['messages_removed']} messages removed, "
                     f"{comp['before_tokens']:,} → {comp['after_tokens']:,} tokens"
                 )
-        
+
         return "\n".join(lines)
 
 
@@ -1236,7 +1236,7 @@ def save_context_state(manager: ContextManager) -> None:
     """
     state_path = MINI_CODE_DIR / "context_state.json"
     MINI_CODE_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     state = {
         "model": manager.model,
         "context_window": manager.context_window,
@@ -1244,7 +1244,7 @@ def save_context_state(manager: ContextManager) -> None:
         "compaction_history": manager.compaction_history[-10:],  # Keep last 10
         "_compaction_level": manager._compaction_level,  # Save compaction level
     }
-    
+
     state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
@@ -1260,7 +1260,7 @@ def load_context_state() -> ContextManager | None:
     state_path = MINI_CODE_DIR / "context_state.json"
     if not state_path.exists():
         return None
-    
+
     try:
         state = json.loads(state_path.read_text(encoding="utf-8"))
         manager = ContextManager(

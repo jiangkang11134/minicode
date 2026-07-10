@@ -13,9 +13,9 @@ from __future__ import annotations
 
 import hashlib
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
 # 分隔静态部分和动态部分的哨兵字符串。
 # API 提供商（Anthropic, OpenAI）利用此标记实现 prompt caching。

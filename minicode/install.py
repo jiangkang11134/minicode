@@ -9,7 +9,6 @@ import os
 import stat
 import sys
 import tempfile
-from pathlib import Path
 
 from minicode.config import (
     MINI_CODE_DIR,

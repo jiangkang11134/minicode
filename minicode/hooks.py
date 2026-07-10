@@ -16,10 +16,11 @@ import asyncio
 import sys
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Hook events
@@ -158,7 +159,7 @@ class HookManager:
         }
         self._enabled = True
         self._lock = threading.Lock()
-    
+
     def register(
         self,
         event: HookEvent,
@@ -180,7 +181,7 @@ class HookManager:
             注销函数，调用后移除该钩子注册
         """
         import asyncio
-        
+
         with self._lock:
             registration = HookRegistration(
                 event=event,
@@ -188,16 +189,16 @@ class HookManager:
                 is_async=asyncio.iscoroutinefunction(handler),
                 description=description,
             )
-            
+
             self._hooks[event].append(registration)
-            
+
             def unregister():
                 with self._lock:
                     if registration in self._hooks[event]:
                         self._hooks[event].remove(registration)
-        
+
         return unregister
-    
+
     async def fire(self, event: HookEvent, **kwargs: Any) -> list[Any]:
         """异步触发一个事件，按顺序调用所有已注册的钩子处理函数。
 
@@ -214,31 +215,31 @@ class HookManager:
         """
         if not self._enabled:
             return []
-        
+
         context = HookContext(event=event, data=kwargs)
         results = []
-        
+
         for registration in self._hooks[event]:
             if not registration.enabled:
                 continue
-            
+
             start_time = time.time()
             try:
                 if registration.is_async:
                     result = await registration.handler(context)
                 else:
                     result = registration.handler(context)
-                
+
                 registration.call_count += 1
                 registration.last_called = time.time()
                 registration.last_status = "success"
                 registration.last_error = ""
-                
+
                 duration_ms = int((time.time() - start_time) * 1000)
                 registration.total_duration_ms += duration_ms
-                
+
                 results.append(result)
-            
+
             except Exception as e:
                 # Don't let hook errors break main flow
                 registration.failure_count += 1
@@ -246,9 +247,9 @@ class HookManager:
                 registration.last_status = "error"
                 registration.last_error = str(e)
                 results.append(f"Hook error: {e}")
-        
+
         return results
-    
+
     def fire_sync(self, event: HookEvent, **kwargs: Any) -> list[Any]:
         """同步触发事件，仅执行同步（非异步）钩子处理函数。
 
@@ -264,17 +265,17 @@ class HookManager:
         """
         if not self._enabled:
             return []
-        
+
         context = HookContext(event=event, data=kwargs)
         results = []
-        
+
         with self._lock:
             handlers = list(self._hooks[event])  # snapshot for safe iteration
-        
+
         for registration in handlers:
             if not registration.enabled or registration.is_async:
                 continue
-            
+
             start_time = time.time()
             try:
                 result = registration.handler(context)
@@ -282,21 +283,21 @@ class HookManager:
                 registration.last_called = time.time()
                 registration.last_status = "success"
                 registration.last_error = ""
-                
+
                 duration_ms = int((time.time() - start_time) * 1000)
                 registration.total_duration_ms += duration_ms
-                
+
                 results.append(result)
-            
+
             except Exception as e:
                 registration.failure_count += 1
                 registration.last_called = time.time()
                 registration.last_status = "error"
                 registration.last_error = str(e)
                 results.append(f"Hook error: {e}")
-        
+
         return results
-    
+
     def enable(self) -> None:
         """启用所有钩子（全局开关）。"""
         self._enabled = True
@@ -322,7 +323,7 @@ class HookManager:
             hooks = self._hooks.get(event, [])
         else:
             hooks = [h for hooks_list in self._hooks.values() for h in hooks_list]
-        
+
         return {
             "total_hooks": len(hooks),
             "enabled_hooks": sum(1 for h in hooks if h.enabled),
@@ -344,7 +345,7 @@ class HookManager:
                 for h in hooks
             ],
         }
-    
+
     def format_hook_status(self) -> str:
         """格式化钩子状态信息为可读文本，用于展示和调试。
 
@@ -355,12 +356,12 @@ class HookManager:
             格式化的状态文本字符串
         """
         lines = ["Hooks Status", "=" * 50, ""]
-        
+
         for event in HookEvent:
             hooks = self._hooks[event]
             if not hooks:
                 continue
-            
+
             lines.append(f"{event.value}:")
             for hook in hooks:
                 status = "✓" if hook.enabled else "✗"
@@ -369,7 +370,7 @@ class HookManager:
                     f"({hook.call_count} calls, {hook.total_duration_ms}ms)"
                 )
             lines.append("")
-        
+
         stats = self.get_hook_stats()
         lines.extend([
             "-" * 50,
@@ -378,7 +379,7 @@ class HookManager:
             f"Total calls: {stats['total_calls']}",
             f"Total duration: {stats['total_duration_ms']}ms",
         ])
-        
+
         return "\n".join(lines)
 
 
@@ -402,17 +403,17 @@ def create_logging_hook(log_file: Path | None = None) -> HookHandler:
     def handler(ctx: HookContext) -> None:
         timestamp = time.strftime("%H:%M:%S", time.localtime(ctx.timestamp))
         message = f"[{timestamp}] {ctx.event.value}"
-        
+
         if ctx.tool_name:
             message += f" tool={ctx.tool_name}"
         if ctx.session_id:
             message += f" session={ctx.session_id[:8]}"
-        
+
         if log_file:
             log_file.parent.mkdir(parents=True, exist_ok=True)
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(message + "\n")
-    
+
     return handler
 
 
@@ -462,15 +463,15 @@ def create_script_hook(script_path: Path) -> AsyncHookHandler:
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await process.communicate()
-            
+
             if process.returncode == 0:
                 return stdout.decode("utf-8", errors="replace")
             else:
                 return f"Script failed: {stderr.decode('utf-8', errors='replace')}"
-        
+
         except Exception as e:
             return f"Script execution failed: {e}"
-    
+
     return handler
 
 

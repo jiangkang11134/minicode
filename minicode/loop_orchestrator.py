@@ -21,17 +21,16 @@ from __future__ import annotations
 
 import concurrent.futures
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from minicode.agent_intelligence import ErrorClassifier, NudgeGenerator, ToolScheduler
 
 # ── Agent 智能辅助 ──
 from minicode.agent_metrics import AgentMetricsCollector
-from minicode.capability_registry import CapabilityDomain, get_registry
 from minicode.circuit_breaker import CompactionCircuitBreaker
 
 # ── 上下文管理 ──
-from minicode.context_compactor import AutoCompactConfig, ContextCompactor
 from minicode.context_manager import ContextManager, estimate_message_tokens
 from minicode.decision_audit import DecisionOutcome, get_auditor
 from minicode.hooks import HookEvent, fire_hook_sync
@@ -40,7 +39,6 @@ from minicode.hooks import HookEvent, fire_hook_sync
 from minicode.intent_parser import parse_intent
 from minicode.layered_context import ContextBuilder, LayeredContext
 from minicode.logging_config import get_logger
-from minicode.memory import MemoryManager
 from minicode.micro_compact import MicroCompactor
 
 # ── 子模块（拆分目标） ──
@@ -50,7 +48,6 @@ from minicode.model_caller import (
     _model_next,
     _summarize_model_api_failure,
 )
-from minicode.model_registry import detect_provider
 from minicode.permissions import PermissionManager
 from minicode.runtime_profiles import resolve_runtime_profile
 from minicode.state import AppState, Store
@@ -79,7 +76,6 @@ from minicode.types import (
     ChatMessage,
     ModelAdapter,
     RuntimeEvent,
-    RuntimeEventCategory,
 )
 from minicode.working_memory import get_working_memory, protect_context
 

@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import concurrent.futures
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from minicode.logging_config import get_logger
-from minicode.permissions import PermissionManager
-from minicode.state import AppState, Store, increment_tool_calls, set_busy, set_idle
+from minicode.state import increment_tool_calls, set_busy, set_idle
 from minicode.tooling import ToolContext, ToolRegistry, ToolResult
 
 logger = get_logger("tool_executor")

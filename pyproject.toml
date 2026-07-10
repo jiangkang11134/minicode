@@ -3,12 +3,31 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smartcode"
+name = "smartcode-agent"
 version = "0.2.0"
-description = "SmartCode — AI coding agent with two-tier review, Docker sandbox testing, memory system"
+description = "SmartCode — AI coding agent with two-tier review, Docker sandbox testing, and memory system"
 readme = "README.md"
 requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "SmartCode Contributors"},
+]
+keywords = ["ai", "coding-agent", "code-review", "docker", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/jiangkang11134/SmartCode"
+Repository = "https://github.com/jiangkang11134/SmartCode"
+Documentation = "https://github.com/jiangkang11134/SmartCode"
 
 [project.optional-dependencies]
 dev = [
@@ -18,6 +37,8 @@ dev = [
 ]
 
 [project.scripts]
+smartcode = "minicode.main:main"
+smartcode-headless = "minicode.headless:main"
 minicode-py = "minicode.main:main"
 minicode-headless = "minicode.headless:main"
 
@@ -42,18 +63,16 @@ select = [
     "F",    # pyflakes
     "W",    # pycodestyle warnings
     "I",    # isort
-    "N",    # pep8-naming
-    "UP",   # pyupgrade
 ]
 ignore = [
-    "E501",   # line too long (already handled by formatter)
+    "E402",   # allow module-level imports (lazy init pattern)
+    "E501",   # line too long
     "E731",   # allow lambda assignments
-    "N802",   # allow lowercase function names
-    "N806",   # allow non-lowercase variable
+    "F401",   # allow unused imports (re-exports)
+    "F821",   # allow undefined names (commented-code pattern)
+    "F823",   # allow undefined local (commented-code pattern)
+    "F841",   # allow unused variables (commented-code pattern)
 ]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["N802", "N803", "N806", "N999"]
 
 [tool.mypy]
 python_version = "3.11"

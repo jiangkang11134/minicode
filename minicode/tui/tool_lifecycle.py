@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from minicode.tui.state import ScreenState
 from minicode.tui.tool_helpers import _summarize_collapsed_tool_body

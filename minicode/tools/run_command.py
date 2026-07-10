@@ -10,7 +10,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import Sequence
+from collections.abc import Sequence
 
 from minicode.background_tasks import register_background_shell_task
 from minicode.tooling import ToolDefinition, ToolResult
@@ -75,7 +75,7 @@ def _truncate_large_output(output: str, max_chars: int = MAX_OUTPUT_CHARS) -> st
     """
     if len(output) <= max_chars:
         return output
-    
+
     lines = output.split("\n")
     total_lines = len(lines)
     # Keep head (first 60%) and tail (last 40%)
@@ -84,7 +84,7 @@ def _truncate_large_output(output: str, max_chars: int = MAX_OUTPUT_CHARS) -> st
     if tail_lines > int(total_lines * 0.4):
         tail_lines = int(total_lines * 0.4)
         head_lines = total_lines - tail_lines
-    
+
     head = "\n".join(lines[:head_lines])
     tail = "\n".join(lines[-tail_lines:])
     omitted = total_lines - head_lines - tail_lines
@@ -460,13 +460,13 @@ def _run(input_data: dict, context) -> ToolResult:
             stdin=subprocess.DEVNULL,
             **popen_kwargs,
         )
-        
+
         if child.pid is None:
             return ToolResult(
                 ok=False,
                 output="Failed to get PID for background command. Process may have exited immediately.",
             )
-        
+
         background_task = register_background_shell_task(
             command=_strip_trailing_background_operator(input_data["command"]),
             pid=child.pid,
@@ -482,10 +482,10 @@ def _run(input_data: dict, context) -> ToolResult:
         try:
             import pty
             import select
-            
+
             master_fd, slave_fd = pty.openpty()
             effective_timeout = input_data.get("timeout") or COMMAND_TIMEOUT
-            
+
             process = subprocess.Popen(
                 [command, *args],
                 cwd=effective_cwd,
@@ -495,11 +495,11 @@ def _run(input_data: dict, context) -> ToolResult:
                 stderr=slave_fd,
                 start_new_session=True,
             )
-            
+
             os.close(slave_fd)
             output_bytes = bytearray()
             timed_out = False
-            
+
             try:
                 while True:
                     r, _, _ = select.select([master_fd], [], [], effective_timeout)
@@ -508,7 +508,7 @@ def _run(input_data: dict, context) -> ToolResult:
                         process.kill()
                         process.wait()
                         break
-                    
+
                     try:
                         data = os.read(master_fd, 4096)
                         if not data:
@@ -521,18 +521,18 @@ def _run(input_data: dict, context) -> ToolResult:
                 os.close(master_fd)
                 if not timed_out:
                     process.wait()
-                
+
             output_str = _decode_command_output(bytes(output_bytes)).strip()
             output_str = output_str.replace("\r\n", "\n")
             output_str = _truncate_large_output(output_str)
-            
+
             if timed_out:
                 return ToolResult(
                     ok=False,
                     output=f"Command timed out after {effective_timeout} seconds (process killed).\nPartial output:\n{output_str}",
                 )
             return ToolResult(ok=process.returncode == 0, output=output_str)
-            
+
         except ImportError:
             pass  # Fallback to subprocess on systems without pty
 
@@ -573,4 +573,4 @@ run_command_tool = ToolDefinition(
     input_schema={"type": "object", "properties": {"command": {"type": "string", "description": "Command to run"}, "args": {"type": "array", "items": {"type": "string"}, "description": "Arguments"}, "cwd": {"type": "string", "description": "Working directory"}, "timeout": {"type": "integer", "description": "Timeout in seconds (1-600, default 300)"}}, "required": ["command"]},
     validator=_validate,
     run=_run,
-)  # 
+)  #

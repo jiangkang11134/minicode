@@ -373,7 +373,7 @@ def _handle_preview_rewind_request(
     return 0
 
 def main() -> None:
-    """SmartCode Python 主入口函数。
+    r"""SmartCode Python 主入口函数。
 
     【为什么需要】作为整个应用的 CLI 入口点，main() 统一管理初始化、路由和
     资源释放的生命周期，确保所有子系统的正确启动顺序和优雅关闭。
@@ -563,13 +563,13 @@ def main() -> None:
         from minicode.config import format_config_diagnostic
         print(format_config_diagnostic())
         return
-    
+
     # Run installer if requested
     if args.install:
         from minicode.install import main as install_main
         install_main()
         return
-    
+
     cwd = str(Path.cwd())
     argv = remaining_argv
 
@@ -601,7 +601,7 @@ def main() -> None:
                 args.rewind_to,
             )
         )
-    
+
     # Filter out our custom args before passing to management commands
     management_argv = [a for a in argv if not a.startswith("--")]
     if maybe_handle_management_command(cwd, management_argv):
@@ -631,7 +631,7 @@ def main() -> None:
     prompt_handler = _make_cli_permission_prompt() if sys.stdin.isatty() else None
     tools = create_default_tool_registry(cwd, runtime=runtime)
     permissions = PermissionManager(cwd, prompt=prompt_handler)
-    
+
     # Use unified model registry for adapter creation
     force_mock = runtime is None
     model = create_model_adapter(
@@ -640,7 +640,7 @@ def main() -> None:
         runtime=runtime,
         force_mock=force_mock,
     )
-    
+
     # Initialize ContextManager for context window management
     from minicode.context_manager import ContextManager
     from minicode.logging_config import get_logger
@@ -649,12 +649,12 @@ def main() -> None:
     if runtime:
         context_mgr = ContextManager(model=runtime.get("model", "default"))
         logger.info("Context manager initialized for model: %s", runtime.get("model", "unknown"))
-    
+
     # Initialize MemoryManager for cross-session knowledge retention
     from minicode.memory import MemoryManager
     memory_mgr = MemoryManager(project_root=Path(cwd))
     logger.info("Memory manager initialized")
-    
+
     # Initialize UserProfileManager for user preferences
     from minicode.user_profile import UserProfileManager
     profile_manager = UserProfileManager(cwd=cwd)
@@ -662,7 +662,7 @@ def main() -> None:
     logger.info("User profile manager initialized (global=%s, project=%s)",
                 profile_manager.global_path.exists(),
                 profile_manager.project_path.exists())
-    
+
     # Initialize Store for global state management (inspired by Claude Code's Zustand store)
     from minicode.state import create_app_store
     app_store = create_app_store(
@@ -673,7 +673,7 @@ def main() -> None:
         }
     )
     logger.info("Store initialized with session: %s", app_store.get_state().session_id)
-    
+
     prompt_bundle = build_system_prompt_bundle(
         cwd,
         permissions.get_summary(),
@@ -706,7 +706,7 @@ def main() -> None:
             },
         )
     )
-    
+
     # 显示快速入门指南
     if not sys.stdin.isatty() or os.environ.get("MINI_CODE_SHOW_GUIDE", "1") == "1":
         print(_render_quick_start())
@@ -788,7 +788,7 @@ def main() -> None:
                     runtime=runtime,
                 )
                 permissions.end_turn()
-                
+
                 # Log context usage after turn
                 if context_mgr:
                     stats = context_mgr.get_stats()
@@ -820,14 +820,14 @@ def main() -> None:
         from minicode.logging_config import get_logger
         logger = get_logger("main")
         logger.info("Shutting down...")
-        
+
         # Dispose tools (closes MCP connections)
         try:
             tools.dispose()
             logger.info("Tools disposed successfully")
         except Exception as e:
             logger.warning("Error disposing tools: %s", e)
-        
+
         logger.info("Shutdown complete")
 
 

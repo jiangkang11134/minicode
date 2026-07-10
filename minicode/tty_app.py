@@ -12,7 +12,8 @@ import os
 import sys
 import threading
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from minicode.permissions import PermissionManager
 from minicode.tooling import ToolRegistry

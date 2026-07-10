@@ -34,7 +34,7 @@ def _maybe_read(path: Path) -> str | None:
 
 
 def _engineering_governance_rules() -> str:
-    """返回工程治理规则，作为系统提示词的静态段落。
+    r"""返回工程治理规则，作为系统提示词的静态段落。
 
     这些规则对所有代码生成活动强制执行，不可例外。
     基于 D:\Desktop\engineering-governance 中的规则体系。

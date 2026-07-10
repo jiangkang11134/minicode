@@ -61,18 +61,18 @@ def _matches_glob(path: Path, include_globs: list[str] | None, exclude_globs: li
     """
     posix_path = path.as_posix()
     name = path.name
-    
+
     if exclude_globs:
         for pattern in exclude_globs:
             if fnmatch.fnmatch(name, pattern) or fnmatch.fnmatch(posix_path, pattern):
                 return False
-    
+
     if include_globs:
         for pattern in include_globs:
             if fnmatch.fnmatch(name, pattern) or fnmatch.fnmatch(posix_path, pattern):
                 return True
         return False  # Didn't match any include pattern
-    
+
     return True
 
 
@@ -103,23 +103,23 @@ def _search_file(
     """  # # Skip binary files
     if file_path.suffix.lower() in BINARY_EXTENSIONS:
         return None
-    
+
     try:
         content = file_path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         return None
     except OSError:
         return None
-    
+
     lines = content.splitlines()
     matches = []
-    
+
     for line_num, line in enumerate(lines, start=1):
         if regex.search(line):
             # Build context
             context_before = []
             context_after = []
-            
+
             if context_lines > 0:
                 for i in range(max(0, line_num - 1 - context_lines), line_num - 1):
                     context_before.append({
@@ -133,7 +133,7 @@ def _search_file(
                         "text": lines[i],
                         "is_match": False,
                     })
-            
+
             matches.append({
                 "line": line_num,
                 "text": line,
@@ -141,7 +141,7 @@ def _search_file(
                 "context_before": context_before,
                 "context_after": context_after,
             })
-    
+
     return matches if matches else None
 
 
@@ -165,39 +165,39 @@ def _format_results(
     """
     output_parts = []
     total_matches = 0
-    
+
     for file_path, matches in results:
         if total_matches >= max_results:
             break
-        
+
         rel_path = file_path.relative_to(root).as_posix()
-        
+
         for match in matches:
             if total_matches >= max_results:
                 break
             total_matches += 1
-            
+
             # Context before
             for ctx in match.get("context_before", []):
                 output_parts.append(
                     f"{rel_path}:{ctx['line']}:  {ctx['text']}"
                 )
-            
+
             # Match line
             output_parts.append(
                 f"{rel_path}:{match['line']}: {match['text']}"
             )
-            
+
             # Context after
             for ctx in match.get("context_after", []):
                 output_parts.append(
                     f"{rel_path}:{ctx['line']}:  {ctx['text']}"
                 )
-            
+
             # Separator between matches
             if len(matches) > 1 or match.get("context_before") or match.get("context_after"):
                 output_parts.append("")
-    
+
     return "\n".join(output_parts)
 
 
@@ -223,13 +223,13 @@ def _validate(input_data: dict) -> dict:
     pattern = input_data.get("pattern")
     if not isinstance(pattern, str) or not pattern:
         raise ValueError("pattern is required")
-    
+
     # Validate regex
     try:
         re.compile(pattern)
     except re.error as e:
         raise ValueError(f"Invalid regex pattern: {e}")
-    
+
     # Parse include/exclude globs
     include = input_data.get("include")
     if isinstance(include, str):
@@ -238,7 +238,7 @@ def _validate(input_data: dict) -> dict:
         include = None
     elif not isinstance(include, list):
         include = None
-    
+
     exclude = input_data.get("exclude")
     if isinstance(exclude, str):
         exclude = [exclude]
@@ -247,7 +247,7 @@ def _validate(input_data: dict) -> dict:
         exclude = []
     elif not isinstance(exclude, list):
         exclude = []
-    
+
     return {
         "pattern": pattern,
         "path": input_data.get("path", "."),
@@ -282,11 +282,11 @@ def _run(input_data: dict, context) -> ToolResult:
         regex = re.compile(input_data["pattern"], flags)
     except re.error as e:
         return ToolResult(ok=False, output=f"Invalid regex: {e}")
-    
+
     context_lines = input_data.get("context_lines", 0)
     include_globs = input_data.get("include", [])
     exclude_globs = input_data.get("exclude", [])
-    
+
     # Collect files
     try:
         all_files = sorted(root.rglob("*"))
@@ -294,35 +294,35 @@ def _run(input_data: dict, context) -> ToolResult:
         return ToolResult(ok=False, output=f"Permission denied: {root}")
     except OSError as e:
         return ToolResult(ok=False, output=f"Cannot read directory: {e}")
-    
+
     # Search
     results: list[tuple[Path, list[dict[str, Any]]]] = []
     file_count = 0
     skipped = 0
     total_matches = 0
-    
+
     for file_path in all_files:
         # Skip directories
         if not file_path.is_file():
             continue
-        
+
         # Skip hidden and common large directories
         if any(part in SKIP_DIRS or part.startswith('.') for part in file_path.relative_to(root).parts):
             skipped += 1
             continue
-        
+
         # File limit
         if file_count >= MAX_FILES:
             break
-        
+
         # Glob filtering
         rel_path = file_path.relative_to(root)
         if not _matches_glob(rel_path, include_globs, exclude_globs if exclude_globs else None):
             skipped += 1
             continue
-        
+
         file_count += 1
-        
+
         # Search file
         matches = _search_file(file_path, regex, context_lines, root)
         if matches:
@@ -330,24 +330,24 @@ def _run(input_data: dict, context) -> ToolResult:
             total_matches += len(matches)
             if total_matches >= MAX_RESULTS:
                 break
-    
+
     # Format output
     if not results:
         return ToolResult(ok=True, output="No matches found.")
-    
+
     output = _format_results(results, root)
-    
+
     # Truncate if too large
     if len(output) > MAX_RESULT_SIZE:
         output = output[:MAX_RESULT_SIZE] + f"\n\n... (truncated, showing first {MAX_RESULT_SIZE} chars)"
-    
+
     # Add summary
     output += f"\n\n{total_matches} match(es) in {len(results)} file(s)"
     if file_count >= MAX_FILES:
         output += f" (search stopped at {MAX_FILES} files)"
     if skipped > 0:
         output += f" ({skipped} file(s) skipped)"
-    
+
     return ToolResult(ok=True, output=output)
 
 
@@ -398,4 +398,4 @@ grep_files_tool = ToolDefinition(
     },
     validator=_validate,
     run=_run,
-)  # 
+)  #

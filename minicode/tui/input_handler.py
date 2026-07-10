@@ -11,7 +11,8 @@ import os
 import sys
 import threading
 from collections import defaultdict
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from minicode.agent_loop import run_agent_turn
 from minicode.cli_commands import find_matching_slash_commands, try_handle_local_command

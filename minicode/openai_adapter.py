@@ -17,8 +17,9 @@ import os
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from minicode.api_retry import RETRYABLE_STATUS, calculate_backoff
 from minicode.cost_tracker import calculate_cost

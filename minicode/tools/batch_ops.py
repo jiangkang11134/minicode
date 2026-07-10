@@ -232,4 +232,4 @@ batch_delete_tool = ToolDefinition(
     },
     validator=_validate_batch_delete,
     run=_run_batch_delete,
-)  # 
+)  #

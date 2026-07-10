@@ -15,7 +15,7 @@ import logging
 import logging.handlers
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from minicode.config import MINI_CODE_DIR
@@ -62,7 +62,7 @@ class StructuredFormatter(logging.Formatter):
             JSON 格式的日志行字符串
         """
         entry = {
-            "ts": datetime.fromtimestamp(record.created, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+            "ts": datetime.fromtimestamp(record.created, tz=UTC).strftime("%Y-%m-%dT%H:%M:%S"),
             "level": record.levelname,
             "module": record.name,
             "msg": record.getMessage(),

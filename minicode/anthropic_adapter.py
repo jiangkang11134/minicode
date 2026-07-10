@@ -12,7 +12,8 @@ import os
 import time
 import urllib.error
 import urllib.request
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from minicode.api_retry import (
     RETRYABLE_STATUS,
