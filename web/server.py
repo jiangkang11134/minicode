@@ -84,6 +84,26 @@ async def read_file(path: str):
         return {"error": str(e)}
 
 
+@app.post("/api/save")
+async def save_file(data: dict):
+    """保存文件内容。"""
+    path = data.get("path", "")
+    content = data.get("content", "")
+    if not path:
+        return {"ok": False, "error": "path required"}
+    try:
+        target = ROOT / path
+        # 安全检查：确保文件在项目目录内
+        target.resolve().relative_to(ROOT.resolve())
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        return {"ok": True, "path": path}
+    except ValueError:
+        return {"ok": False, "error": "path outside project root"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 @app.post("/api/upload")
 async def upload_file(file: UploadFile):
     """上传文件到项目目录。"""
