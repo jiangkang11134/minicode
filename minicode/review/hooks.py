@@ -13,6 +13,11 @@ import time
 from pathlib import Path
 from typing import Any
 
+# 严格审查熔断器（用列表包装实现方法内修改）
+_strict_review_failures: list[int] = [0]
+_strict_review_max_failures: int = 3
+_strict_review_lock: threading.Lock = threading.Lock()
+
 from minicode.review.config import (
     get_review_mode,
     SUB_AGENT_MODEL,
@@ -226,7 +231,7 @@ class ReviewHooks:
         threading.Thread(target=_build, daemon=True).start()
 
     # -----------------------------------------------------------------------
-    # 钩子 1 — 写前预审查（宽松审查，阻断写入）
+    # 钩子 1 — 写前预审查（宽松审查 + 严格审查，阻断写入）
     # -----------------------------------------------------------------------
 
     def on_before_write(
@@ -234,15 +239,16 @@ class ReviewHooks:
     ):
         """write/edit/patch 执行前调用。
 
-        返回 ToolResult(ok=False) 阻断写入，或 None 放行。
+        两阶段审查：
+          阶段1（宽松，毫秒级）：正则+AST，阻断 security critical/major
+          阶段2（严格，秒级，strict 模式）：收集上下文+1次LLM，按等级处理
 
-        ⚠️ 模式切换检测在每个钩子入口处执行：
-           off→loose/strict 过渡时启动全面回补扫描（不阻断当前写入）。
+        返回 ToolResult(ok=False) 阻断写入，或 None 放行。
         """
-        # 模式切换检测（off→loose/strict 过渡）
+        # 模式切换检测
         self._check_transition()
 
-        # off 模式：不执行审查，直接放行
+        # off 模式直接放行
         if get_review_mode() == "off":
             return None
 
@@ -251,13 +257,15 @@ class ReviewHooks:
         content = tool_input.get("content") or tool_input.get("new_string", "")
         file_path = tool_input.get("file_path") or tool_input.get("path", "")
 
-        # 跟踪新创建的文件（硬性检查文件是否已存在）
         if file_path and not Path(file_path).exists():
             self._new_files.add(file_path)
 
         if not content.strip():
             return None
 
+        # ════════════════════════════════════════════════════════════════
+        # 阶段1：宽松审查（正则+AST，毫秒级）
+        # ════════════════════════════════════════════════════════════════
         start = time.time()
         issues = _pre_review_content(content, file_path)
         elapsed_ms = int((time.time() - start) * 1000)
@@ -265,17 +273,7 @@ class ReviewHooks:
         critical = [i for i in issues if i["severity"] in ("critical", "major")]
         minor = [i for i in issues if i["severity"] in ("minor", "suggestion")]
 
-        # 日志
-        logger.info("review.pre_check", extra={
-            "file": file_path,
-            "tool": tool_name,
-            "blocked": bool(critical),
-            "critical_count": len(critical),
-            "minor_count": len(minor),
-            "duration_ms": elapsed_ms,
-        })
-
-        # 阻断：critical/major 问题
+        # 宽松审查命中 critical → 阻断（force=true 可跳过）
         if critical:
             force = tool_input.get("force", False) or tool_input.get("force_write", False)
             if force:
@@ -293,6 +291,97 @@ class ReviewHooks:
                 ),
             )
 
+        # ════════════════════════════════════════════════════════════════
+        # 阶段2：严格审查（strict 模式，收集+1次LLM，~5s）
+        # 带熔断器和超时保护，防止 API 不稳定时阻塞写入
+        # ════════════════════════════════════════════════════════════════
+        if get_review_mode() == "strict":
+            with _strict_review_lock:
+                breaker_open = _strict_review_failures[0] >= _strict_review_max_failures
+
+            if breaker_open:
+                logger.warning("Strict review circuit breaker OPEN (%d/%d failures), skipping",
+                               _strict_review_failures[0], _strict_review_max_failures)
+                self._coda_findings.append({
+                    "role": "system",
+                    "content": (
+                        f"[审查熔断] 严格审查因连续 {_strict_review_failures[0]} 次 API 失败已临时关闭，"
+                        f"仅执行了基础安全检查。写入已放行。"
+                    ),
+                })
+            else:
+                strict_verdict = self._do_strict_review(file_path, content, reason="写入前审查")
+                if strict_verdict is None:
+                    # 严格审查异常 → 熔断计数 + 退化到宽松审查
+                    with _strict_review_lock:
+                        _strict_review_failures[0] += 1
+                    fs = _strict_review_failures[0]
+                    logger.warning("Strict review failed (%d/%d), falling back to loose review",
+                                   fs, _strict_review_max_failures)
+                    self._coda_findings.append({
+                        "role": "system",
+                        "content": (
+                            f"[审查退化] 严格审查因 API 异常未完成（{fs}/{_strict_review_max_failures}），"
+                            f"本次仅执行了基础安全检查。写入已放行。"
+                        ),
+                    })
+                else:
+                    # 严格审查成功 → 重置熔断器
+                    with _strict_review_lock:
+                        _strict_review_failures[0] = 0
+
+                    # 按严重等级处理结果
+                    sev = strict_verdict.get("severity", "pass")
+                    if sev == "critical":
+                        force = tool_input.get("force", False) or tool_input.get("force_write", False)
+                        if not force:
+                            return ToolResult(
+                                ok=False,
+                                output=(
+                                    f"[审查阻断: 安全风险] {file_path}\n\n"
+                                    f"问题: {strict_verdict['summary']}\n\n"
+                                    f"详情:\n{strict_verdict.get('detail', '')}\n\n"
+                                    f"建议修复方案:\n"
+                                    f"1. 将密钥/密码移至环境变量，运行时读取\n"
+                                    f"2. 使用参数化查询替代字符串拼接\n"
+                                    f"3. 避免使用 eval()，改用安全的替代方案\n\n"
+                                    f"如需强制写入，添加 force=true 参数。"
+                                ),
+                            )
+                    elif sev == "major":
+                        force = tool_input.get("force", False) or tool_input.get("force_write", False)
+                        if not force:
+                            return ToolResult(
+                                ok=False,
+                                output=(
+                                    f"[审查阻断: 兼容性影响] {file_path}\n\n"
+                                    f"问题: {strict_verdict['summary']}\n\n"
+                                    f"冲突分析:\n{strict_verdict.get('detail', '')}\n\n"
+                                    f"建议修复方案:\n"
+                                    f"1. 保持向后兼容——保留旧的函数签名，新增带新参数的函数\n"
+                                    f"2. 修改所有调用方（views.py、api.py等）同步更新\n"
+                                    f"3. 或添加适配器层，兼容新旧两种调用方式\n\n"
+                                    f"如需强制写入，添加 force=true 参数。"
+                                ),
+                            )
+                    elif sev == "minor":
+                        self._coda_findings.append({
+                            "role": "system",
+                            "content": (
+                                f"[审查建议] {file_path}\n\n"
+                                f"{strict_verdict.get('detail', strict_verdict.get('summary', ''))}\n\n"
+                                f"建议优化:\n"
+                                f"1. 考虑补充异常处理\n"
+                                f"2. 命名和代码风格可进一步规范\n"
+                                f"3. 不影响功能，可选择后续优化"
+                            ),
+                        })
+                    else:
+                        self._coda_findings.append({
+                            "role": "system",
+                            "content": f"[审查通过] {file_path} — 代码安全无兼容性问题",
+                        })
+
         # 放行：附带 minor 提示
         if minor:
             return ToolResult(
@@ -309,6 +398,105 @@ class ReviewHooks:
     # 钩子 2 — 写后处理（更新 import map + 严格审查触发）
     # -----------------------------------------------------------------------
 
+    def _do_strict_review(self, file_path: str, content: str, reason: str = "写入前审查") -> dict | None:
+        """同步执行严格审查：收集上下文 → 1 次 LLM → 返回裁决。
+
+        返回:
+            {"severity": "critical"|"major"|"minor"|"pass",
+             "summary": "一句话总结",
+             "detail": "详细报告"}
+            或 None（异常时）
+        """
+        import json
+
+        context_parts = []
+
+        # 1. 环境摘要
+        context_parts.append(f"[环境]\n变更文件: {file_path}\n原因: {reason}")
+
+        # 2. 变更代码
+        context_parts.append(f"[变更代码]\n```python\n{content}\n```")
+
+        # 3. import map → 受影响文件 + 内容
+        import_map_path = Path(self.cwd) / IMPORT_MAP_DIR / IMPORT_MAP_FILE
+        affected = []
+        if import_map_path.exists():
+            try:
+                data = json.loads(import_map_path.read_text(encoding="utf-8"))
+                for sym_name, sym_data in data.get("symbols", {}).items():
+                    if sym_data.get("file") == file_path:
+                        for ref in sym_data.get("referenced_by", []):
+                            if ref != file_path and ref not in affected:
+                                affected.append(ref)
+                if affected:
+                    context_parts.append(f"[受影响文件]\n" + "\n".join(f"- {f}" for f in affected))
+                    for af in affected:
+                        af_path = Path(self.cwd) / af
+                        if af_path.exists():
+                            afc = af_path.read_text(encoding="utf-8", errors="replace")
+                            context_parts.append(f"[文件: {af}]\n```python\n{afc}\n```")
+            except Exception:
+                pass
+
+        # 4. code_review 结果
+        try:
+            cr = self.tools.execute("code_review", {"path": str(Path(self.cwd) / Path(file_path).parent)}, self.tool_context)
+            if cr and cr.ok:
+                context_parts.append(f"[code review]\n{cr.output[:1500]}")
+        except Exception:
+            pass
+
+        prompt = (
+            f"审查以下代码变更。按严重等级输出结果。\n\n"
+            + "\n\n".join(context_parts) +
+            "\n\n"
+            f"输出格式（严格按以下 JSON 格式）：\n"
+            f'{{"severity": "critical"/"major"/"minor"/"pass", '
+            f'"summary": "一句话总结", '
+            f'"detail": "详细报告"}}\n\n'
+            f"等级定义：\n"
+            f"- critical: 安全漏洞（密钥硬编码/SQL注入/eval/可被外部利用的问题）\n"
+            f"- major: 兼容性问题（改签名未更新调用方/API 破坏性变更）\n"
+            f"- minor: 代码质量问题（缺少异常处理/命名不规范/可优化）\n"
+            f"- pass: 无问题"
+        )
+
+        task_input = {"description": f"审查 {file_path}", "prompt": prompt, "agent_type": "review",
+                       "max_turns": 1}
+        if SUB_AGENT_MODEL:
+            task_input["model"] = SUB_AGENT_MODEL
+        if SUB_AGENT_API_KEY:
+            task_input["sub_api_key"] = SUB_AGENT_API_KEY
+        if SUB_AGENT_API_BASE:
+            task_input["sub_api_base"] = SUB_AGENT_API_BASE
+
+        try:
+            # 带超时的工具调用（10 秒，防止 API 挂死阻塞写入）
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(self.tools.execute, "task", task_input, self.tool_context)
+                try:
+                    result = future.result(timeout=10)
+                except concurrent.futures.TimeoutError:
+                    logger.warning("Strict review timed out after 10s")
+                    return None
+
+            if result and result.ok:
+                output = result.output or ""
+                # 尝试提取 JSON 输出
+                import re
+                m = re.search(r'\{[^}]+\}', output)
+                if m:
+                    verdict = json.loads(m.group())
+                    return verdict
+                # 兜底：未解析出 JSON 时根据关键字符串判断
+                if "[REVIEW_RESULT: FAIL]" in output or "critical" in output.lower():
+                    return {"severity": "major", "summary": "审查发现问题", "detail": output[:1000]}
+                return {"severity": "pass", "summary": "审查通过", "detail": output[:500]}
+        except Exception as exc:
+            logger.warning("Strict review failed: %s", exc)
+            return None
+
     def on_file_written(
         self,
         file_path: str,
@@ -319,11 +507,8 @@ class ReviewHooks:
     ):
         """write/edit/patch 成功后调用。
 
-        触发条件判断（mode_engine.should_trigger_strict）：
-          1. 安全路径（auth/login/security 等）
-          2. diff 特征（大变更/跨文件/API 变更）
-          3. 新文件（首次创建，此前不存在）
-          4. 历史问题率（同文件 90 天内 >60%）
+        严格审查已在 on_before_write 中同步完成。
+        此钩子只做 import map 增量更新（后台线程）。
         """
         # 1. 增量更新 import map → 后台线程执行
         self._import_map_thread = threading.Thread(
@@ -333,7 +518,7 @@ class ReviewHooks:
         )
         self._import_map_thread.start()
 
-        # 2. 严格模式 → 触发判断
+        # 2. strict 模式 → 检查是否需要启动 test agent（仅当文件是新文件或安全路径时）
         if get_review_mode() == "strict":
             from minicode.review.mode_engine import should_trigger_strict
 
@@ -343,92 +528,9 @@ class ReviewHooks:
                 is_new_file=file_path in self._new_files,
             )
 
-            logger.info("review.post_write", extra={
-                "file": file_path,
-                "triggered_strict": should,
-                "reason": reason,
-            })
-
             if should:
-                # review agent 完成后再启动 test agent（串行，不并行）
-                self._spawn_review_sub_agent(file_path, reason, spawn_test=True)
-
-    def _async_update_import_map(self, file_path: str) -> None:
-        """后台线程执行：import map 增量更新。
-
-        Defect 3: 不阻塞主循环，on_turn_end 时等待线程完成。
-        """
-        try:
-            from minicode.tools.import_map import update_import_map_for_file
-            update_import_map_for_file(self.cwd, file_path)
-        except Exception as exc:
-            logger.debug("Import map update failed: %s", exc)
-
-    def _spawn_review_sub_agent(self, file_path: str, reason: str, spawn_test: bool = False):
-        """后台线程调审查子 Agent，不阻塞主循环。
-
-        spawn_test=True 时，仅在审查结果为 [REVIEW_RESULT: PASS] 时
-        才自动调测试子 Agent。审查发现 FAIL 则不调 test，等主 Agent 先修代码。
-        review 和 test 共用同一后台线程（串行执行）。
-        on_turn_end 时 join 等待所有后台线程完成后统一注入。
-        """
-        if not self.tools or not self.tool_context:
-            return
-
-        prompt = (
-            f"Review the changes in {file_path}.\n"
-            f"Trigger reason: {reason}\n\n"
-            f"1. Read the import map at .mini-code-import-map/import-map.json\n"
-            f"2. Find which files reference changed symbols\n"
-            f"3. Read affected files and check backward compatibility\n"
-            f"4. Run code_review on {file_path}\n"
-            f"5. Output a structured report with severity levels\n\n"
-            f"At the end, output [REVIEW_RESULT: PASS] if no issues found, "
-            f"or [REVIEW_RESULT: FAIL] if issues were found."
-        )
-
-        task_input = {"description": f"审查 {file_path}", "prompt": prompt, "agent_type": "review"}
-        if SUB_AGENT_MODEL:
-            task_input["model"] = SUB_AGENT_MODEL
-        if SUB_AGENT_API_KEY:
-            task_input["sub_api_key"] = SUB_AGENT_API_KEY
-        if SUB_AGENT_API_BASE:
-            task_input["sub_api_base"] = SUB_AGENT_API_BASE
-
-        t = threading.Thread(
-            target=self._background_review,
-            args=(file_path, reason, task_input, spawn_test),
-            daemon=True,
-        )
-        self._background_threads.append(t)
-        t.start()
-
-    def _background_review(self, file_path: str, reason: str, task_input: dict, spawn_test: bool = False) -> None:
-        """后台执行：调审查子 Agent，结果安全写入 _coda_findings。
-
-        如果 spawn_test=True 且审查结果为 PASS（无问题），自动调测试子 Agent。
-        审查发现 FAIL 则不调 test，等主 Agent 先修代码。
-        """
-        review_passed = False
-        try:
-            result = self.tools.execute("task", task_input, self.tool_context)
-            if result and result.ok:
-                output = result.output or ""
-                review_passed = "[REVIEW_RESULT: PASS]" in output
-                with self._coda_lock:
-                    self._coda_findings.append({
-                        "role": "system",
-                        "content": f"[Auto Review] {file_path}（{reason}）:\n{output}",
-                    })
-        except Exception as exc:
-            logger.warning("Review sub-agent failed: %s", exc)
-
-        # review PASS → 自动调 test（同一后台线程，串行）
-        if spawn_test and review_passed:
-            logger.info("Review PASS for %s, automatically spawning test...", file_path)
-            self._spawn_test_sub_agent(file_path)
-        elif spawn_test and not review_passed:
-            logger.info("Review FAIL for %s, skipping test (fix code first)", file_path)
+                # test agent 启动只在写后做（不重复审查，只跑测试）
+                self._spawn_test_sub_agent(file_path)
 
     def _spawn_test_sub_agent(self, file_path: str):
         """在 Docker 沙箱中跑测试，然后用精简 agent 分析结果生成报告。

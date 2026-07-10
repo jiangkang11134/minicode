@@ -94,6 +94,7 @@ SLASH_COMMANDS = [
     SlashCommand("/config-paths", "/config-paths", "Show mini-code and Claude fallback settings paths."),
     SlashCommand("/skills", "/skills", "List discovered SKILL.md workflows."),
     SlashCommand("/mcp", "/mcp", "Show configured MCP servers and connection state."),
+    SlashCommand("/report", "/report", "Show session run report (tokens, cost, timing, review stats)."),
     SlashCommand("/permissions", "/permissions", "Show mini-code permission storage path."),
     SlashCommand("/exit", "/exit", "Exit mini-code."),
     SlashCommand("/debug", "/debug", "Show scroll and terminal diagnostics."),
@@ -972,6 +973,14 @@ def try_handle_local_command(
         from minicode.user_profile import handle_user_command
         args = user_input[len("/user"):].strip()
         return handle_user_command(args)
+
+    if user_input == "/report":
+        try:
+            from minicode.report import build_session_report, format_session_report
+            report = build_session_report()
+            return format_session_report(report)
+        except Exception as e:
+            return f"生成报告失败: {e}"
 
     return None
 
