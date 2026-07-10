@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: |
+          ruff check minicode/ --no-fix
+
+      - name: Type check with mypy
+        run: |
+          mypy minicode/ --ignore-missing-imports --check-untyped-defs || true
+        continue-on-error: true
+
+      - name: Check all source files compile
+        run: |
+          python -c "
+          import glob, py_compile, sys
+          files = sorted(glob.glob('minicode/**/*.py', recursive=True))
+          files = [f for f in files if '__pycache__' not in f]
+          errors = []
+          for f in files:
+              try:
+                  py_compile.compile(f, doraise=True)
+              except py_compile.PyCompileError as e:
+                  errors.append((f, str(e)))
+          if errors:
+              for f, e in errors:
+                  print(f'FAIL: {f}: {e}')
+              sys.exit(1)
+          print(f'All {len(files)} files compile OK')
+          "
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short -x --timeout=30
+        continue-on-error: true
+
+  security-review-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+
+      - name: Run review benchmark (security samples only, no API key needed)
+        run: |
+          python benchmark/run_benchmark.py

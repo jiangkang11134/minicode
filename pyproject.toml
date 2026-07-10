@@ -3,15 +3,19 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "minicode-learn"
-version = "0.1.0"
-description = "A lightweight terminal coding assistant for local development workflows."
+name = "smartcode"
+version = "0.2.0"
+description = "SmartCode — AI coding agent with two-tier review, Docker sandbox testing, memory system"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0.0"]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.8.0",
+]
 
 [project.scripts]
 minicode-py = "minicode.main:main"
@@ -28,9 +32,36 @@ package-dir = {"" = "."}
 where = ["."]
 
 
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (already handled by formatter)
+    "E731",   # allow lambda assignments
+    "N802",   # allow lowercase function names
+    "N806",   # allow non-lowercase variable
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["N802", "N803", "N806", "N999"]
+
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = false
 warn_unused_configs = true
 ignore_missing_imports = true
 check_untyped_defs = false
+exclude = [
+    "build/",
+    "benchmark/results",
+]
