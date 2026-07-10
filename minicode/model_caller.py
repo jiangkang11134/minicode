@@ -15,7 +15,7 @@ from typing import Any, Callable
 from minicode.config import describe_fallback_guidance, describe_provider_channel
 from minicode.logging_config import get_logger
 from minicode.model_registry import detect_provider
-from minicode.state import Store, AppState
+from minicode.state import AppState, Store
 from minicode.types import AgentStep, ChatMessage, ModelAdapter
 
 logger = get_logger("model_caller")

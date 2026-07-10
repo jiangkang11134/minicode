@@ -9,9 +9,10 @@
 焦点事件、带括号粘贴（Bracketed Paste）等转义序列。
 """
 from __future__ import annotations
+
 import re
 from dataclasses import dataclass
-from typing import Union, Literal
+from typing import Literal, Union
 
 # Pre-compiled regexes for escape sequence parsing
 _SGR_MOUSE_RE = re.compile(r'^\x1b\[<(\d+);(\d+);(\d+)([Mm])')

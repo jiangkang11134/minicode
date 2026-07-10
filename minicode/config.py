@@ -10,9 +10,8 @@ import inspect
 import json
 import os
 from pathlib import Path
-from urllib.parse import urlparse
 from typing import Any
-
+from urllib.parse import urlparse
 
 MINI_CODE_DIR = Path.home() / ".mini-code"
 MINI_CODE_SETTINGS_PATH = MINI_CODE_DIR / "settings.json"
@@ -1032,7 +1031,7 @@ def format_config_diagnostic(cwd: str | Path | None = None) -> str:
         lines.append(f"  Model: {model_name}")
 
         # Show provider info
-        from minicode.model_registry import detect_provider, Provider
+        from minicode.model_registry import Provider, detect_provider
         provider = detect_provider(model_name, config)
         lines.append(f"  Provider: {provider.value}")
         lines.append(f"  Channel: {describe_provider_channel(config, provider.value)}")

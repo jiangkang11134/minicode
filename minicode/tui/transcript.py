@@ -15,11 +15,11 @@ from bisect import bisect_left
 from dataclasses import dataclass
 
 from .chrome import (
-    _cached_terminal_size,
-    RESET,
     DIM,
     ICON_DIVIDER,
     ICON_DOT,
+    RESET,
+    _cached_terminal_size,
     _looks_like_diff_block,
     colorize_unified_diff_block,
 )

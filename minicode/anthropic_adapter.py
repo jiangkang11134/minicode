@@ -22,7 +22,7 @@ from minicode.state import add_cost, record_api_error, update_context_usage
 from minicode.types import AgentStep, StepDiagnostics
 
 if TYPE_CHECKING:
-    from minicode.state import Store, AppState
+    from minicode.state import AppState, Store
 
 DEFAULT_MAX_RETRIES = 4
 

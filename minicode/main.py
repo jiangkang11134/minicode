@@ -15,8 +15,8 @@ SmartCode Python 主入口模块。
 from __future__ import annotations
 
 import argparse
-import sys
 import os
+import sys
 from pathlib import Path
 
 from minicode.agent_loop import run_agent_turn
@@ -38,11 +38,11 @@ from minicode.session import (
     load_session,
     rewind_session,
 )
-from minicode.tools import create_default_tool_registry
 from minicode.tooling import ToolContext
+from minicode.tools import create_default_tool_registry
+from minicode.tty_app import run_tty_app
 from minicode.tui.transcript import format_transcript_text
 from minicode.tui.types import TranscriptEntry
-from minicode.tty_app import run_tty_app
 from minicode.workspace import resolve_tool_path
 
 

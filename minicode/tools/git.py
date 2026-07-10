@@ -7,6 +7,7 @@ from __future__ import annotations
 """
 
 import subprocess
+
 from minicode.tooling import ToolDefinition, ToolResult
 
 

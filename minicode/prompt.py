@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from minicode.prompt_pipeline import PromptPipeline, read_file_cached
 from minicode.product_surfaces import (
     DelegationStatus,
     HookStatus,
@@ -16,6 +15,7 @@ from minicode.product_surfaces import (
     ReadinessReport,
     build_product_snapshot,
 )
+from minicode.prompt_pipeline import PromptPipeline, read_file_cached
 
 
 def _maybe_read(path: Path) -> str | None:

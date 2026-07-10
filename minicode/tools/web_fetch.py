@@ -5,8 +5,9 @@
 
 from __future__ import annotations
 
-import urllib.request
 import urllib.error
+import urllib.request
+
 from minicode.tooling import ToolDefinition, ToolResult
 
 MAX_CONTENT_LENGTH = 50000

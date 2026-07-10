@@ -17,7 +17,6 @@ import time
 from minicode.agent_loop import run_agent_turn
 from minicode.tooling import ToolDefinition, ToolResult
 
-
 # ---------------------------------------------------------------------------
 # Agent type definitions
 # ---------------------------------------------------------------------------

@@ -14,7 +14,6 @@ from typing import Any, Callable, Protocol
 
 from minicode.logging_config import get_logger, log_tool_execution
 
-
 # ---------------------------------------------------------------------------
 # Constants for smart truncation
 # ---------------------------------------------------------------------------

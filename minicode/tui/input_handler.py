@@ -5,24 +5,40 @@
 """
 
 from __future__ import annotations
-from collections import defaultdict
+
 import logging
 import os
 import sys
 import threading
+from collections import defaultdict
 from typing import Any, Callable
-from minicode.tui.state import AggregatedEditProgress, ScreenState, TtyAppArgs
-from minicode.cli_commands import try_handle_local_command, find_matching_slash_commands
+
 from minicode.agent_loop import run_agent_turn
+from minicode.cli_commands import find_matching_slash_commands, try_handle_local_command
 from minicode.context_manager import save_context_state
 from minicode.history import save_history_entries
 from minicode.local_tool_shortcuts import parse_local_tool_shortcut
 from minicode.prompt import build_system_prompt_bundle
 from minicode.tooling import ToolContext
-from minicode.types import RuntimeEvent
 from minicode.tui.session_flow import refresh_tty_session_snapshot
-from minicode.tui.tool_helpers import _summarize_tool_input, _is_file_edit_tool, _extract_path_from_tool_input, _summarize_collapsed_tool_body
-from minicode.tui.tool_lifecycle import _push_transcript_entry, _update_tool_entry, _update_transcript_entry, _append_to_transcript_entry, _collapse_tool_entry, _finalize_dangling_running_tools, _get_running_tool_entries, _schedule_tool_auto_collapse
+from minicode.tui.state import AggregatedEditProgress, ScreenState, TtyAppArgs
+from minicode.tui.tool_helpers import (
+    _extract_path_from_tool_input,
+    _is_file_edit_tool,
+    _summarize_collapsed_tool_body,
+    _summarize_tool_input,
+)
+from minicode.tui.tool_lifecycle import (
+    _append_to_transcript_entry,
+    _collapse_tool_entry,
+    _finalize_dangling_running_tools,
+    _get_running_tool_entries,
+    _push_transcript_entry,
+    _schedule_tool_auto_collapse,
+    _update_tool_entry,
+    _update_transcript_entry,
+)
+from minicode.types import RuntimeEvent
 
 logger = logging.getLogger("minicode.input_handler")
 
@@ -192,8 +208,8 @@ class _RawModeContext:
             except Exception:
                 pass
         else:
-            import termios
             import signal
+            import termios
 
             fd = sys.stdin.fileno()
             self._old_settings = termios.tcgetattr(fd)
@@ -249,8 +265,8 @@ class _RawModeContext:
                 except Exception:
                     pass
         elif self._old_settings is not None:
-            import termios
             import signal
+            import termios
 
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, self._old_settings)
             if getattr(self, '_old_sigwinch', None) is not None:

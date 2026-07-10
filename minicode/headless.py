@@ -125,12 +125,12 @@ def run_headless(prompt: str | None = None, allow_edits: bool = False) -> str:
     """
     from minicode.agent_loop import run_agent_turn
     from minicode.config import load_runtime_config
+    from minicode.logging_config import get_logger, setup_logging, structured_logging_requested
     from minicode.memory import MemoryManager
     from minicode.model_registry import create_model_adapter
     from minicode.permissions import PermissionManager
     from minicode.prompt import build_system_prompt
     from minicode.tools import create_default_tool_registry
-    from minicode.logging_config import setup_logging, get_logger, structured_logging_requested
 
     setup_logging(
         level=os.environ.get("MINI_CODE_LOG_LEVEL", "WARNING"),

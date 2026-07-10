@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import shutil
 
-from minicode.tooling import ToolDefinition, ToolContext, ToolResult
+from minicode.tooling import ToolContext, ToolDefinition, ToolResult
 from minicode.workspace import resolve_tool_path
 
 

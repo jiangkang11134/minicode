@@ -5,15 +5,15 @@
 根据运行时配置选择加载的工具集。
 """
 
-from dataclasses import asdict
 import os
+from dataclasses import asdict
 
 from minicode.mcp import create_mcp_backed_tools
 from minicode.skills import discover_skills
 from minicode.tooling import ToolRegistry
 from minicode.tools.ask_user import ask_user_tool
-from minicode.tools.batch_ops import batch_copy_tool, batch_move_tool, batch_delete_tool
-from minicode.tools.code_nav import find_symbols_tool, find_references_tool, get_ast_info_tool
+from minicode.tools.batch_ops import batch_copy_tool, batch_delete_tool, batch_move_tool
+from minicode.tools.code_nav import find_references_tool, find_symbols_tool, get_ast_info_tool
 from minicode.tools.code_review import code_review_tool
 from minicode.tools.diff_viewer import diff_viewer_tool
 from minicode.tools.edit_file import edit_file_tool
@@ -26,13 +26,12 @@ from minicode.tools.patch_file import patch_file_tool
 from minicode.tools.read_file import read_file_tool
 from minicode.tools.run_command import run_command_tool
 from minicode.tools.sandbox_test import sandbox_test_tool
+from minicode.tools.task import task_tool
 from minicode.tools.test_runner import test_runner_tool
 from minicode.tools.todo_write import todo_write_tool
 from minicode.tools.web_fetch import web_fetch_tool
 from minicode.tools.web_search import web_search_tool
 from minicode.tools.write_file import write_file_tool
-from minicode.tools.task import task_tool
-
 
 _CORE_TOOLS = [
     # User interaction
@@ -116,18 +115,26 @@ def _load_utility_wrapper_tools():
     """  # # Lazy import keeps normal coding sessions from paying startup/import cost
     # for rarely used wrappers and keeps the default model tool surface small.
     from minicode.tools.archive_utils import (
-        gzip_compress_tool, gzip_decompress_tool, tar_create_tool, tar_extract_tool,
-        zip_create_tool, zip_extract_tool,
+        gzip_compress_tool,
+        gzip_decompress_tool,
+        tar_create_tool,
+        tar_extract_tool,
+        zip_create_tool,
+        zip_extract_tool,
     )
-    from minicode.tools.crypto_utils import current_time_tool, timestamp_tool, hash_tool, hmac_tool
-    from minicode.tools.csv_utils import csv_parse_tool, csv_create_tool
-    from minicode.tools.encoding_utils import base64_encode_tool, base64_decode_tool, url_encode_tool, url_decode_tool
+    from minicode.tools.crypto_utils import current_time_tool, hash_tool, hmac_tool, timestamp_tool
+    from minicode.tools.csv_utils import csv_create_tool, csv_parse_tool
+    from minicode.tools.encoding_utils import base64_decode_tool, base64_encode_tool, url_decode_tool, url_encode_tool
     from minicode.tools.http_utils import http_request_tool
     from minicode.tools.json_utils import json_format_tool, json_parse_tool
-    from minicode.tools.regex_utils import regex_test_tool, regex_replace_tool
+    from minicode.tools.regex_utils import regex_replace_tool, regex_test_tool
     from minicode.tools.text_utils import (
-        uuid_generate_tool, text_sort_tool, text_dedupe_tool, text_join_tool,
-        line_count_tool, random_string_tool,
+        line_count_tool,
+        random_string_tool,
+        text_dedupe_tool,
+        text_join_tool,
+        text_sort_tool,
+        uuid_generate_tool,
     )
 
     return [

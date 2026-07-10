@@ -9,12 +9,9 @@
 3. NudgeGenerator - 智能提示消息生成
 4. ToolScheduler - 基于历史性能的智能工具调度
 """
-from enum import Enum
 from dataclasses import dataclass
-from typing import Any
-
-
-from typing import TYPE_CHECKING
+from enum import Enum
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from minicode.agent_metrics import AgentMetricsCollector

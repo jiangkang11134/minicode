@@ -22,7 +22,7 @@ from typing import Any, Callable, Literal
 
 from minicode.api_retry import RETRYABLE_STATUS, calculate_backoff
 from minicode.cost_tracker import calculate_cost
-from minicode.state import Store, AppState, add_cost, record_api_error, update_context_usage
+from minicode.state import AppState, Store, add_cost, record_api_error, update_context_usage
 from minicode.types import AgentStep, StepDiagnostics
 
 DEFAULT_MAX_RETRIES = 4

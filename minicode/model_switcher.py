@@ -19,9 +19,9 @@ from urllib.parse import urlparse
 from minicode.config import configured_model_fallbacks, default_model_fallbacks
 from minicode.logging_config import get_logger
 from minicode.model_registry import (
+    BUILTIN_MODELS,
     ModelSelectionController,
     ModelSelectionSignal,
-    BUILTIN_MODELS,
     build_provider_config,
     create_model_adapter,
     list_available_models,

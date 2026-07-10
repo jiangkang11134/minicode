@@ -23,7 +23,6 @@ from typing import Any
 from minicode.config import MINI_CODE_DIR
 from minicode.logging_config import log_session_event
 
-
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------

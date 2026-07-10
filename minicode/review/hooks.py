@@ -19,12 +19,12 @@ _strict_review_max_failures: int = 3
 _strict_review_lock: threading.Lock = threading.Lock()
 
 from minicode.review.config import (
-    get_review_mode,
-    SUB_AGENT_MODEL,
-    SUB_AGENT_API_KEY,
-    SUB_AGENT_API_BASE,
     IMPORT_MAP_DIR,
     IMPORT_MAP_FILE,
+    SUB_AGENT_API_BASE,
+    SUB_AGENT_API_KEY,
+    SUB_AGENT_MODEL,
+    get_review_mode,
 )
 
 logger = logging.getLogger("minicode.review")
@@ -775,7 +775,7 @@ def _line_hash(file_path: str, line: str) -> str:
 
 def _record_false_positive(file_path: str, issues: list[dict]) -> None:
     """记录 false_positive 到 review_memory + _fp_cache。"""
-    from minicode.review.memory import ReviewMemoryStore, ReviewFinding
+    from minicode.review.memory import ReviewFinding, ReviewMemoryStore
 
     store = ReviewMemoryStore()
     for issue in issues:

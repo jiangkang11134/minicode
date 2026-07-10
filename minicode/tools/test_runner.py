@@ -6,15 +6,15 @@
 """
 from __future__ import annotations
 
+import os
+import re
 import subprocess
 import sys
-import re
-import os
 from pathlib import Path
 from typing import Any
+
 from minicode.tooling import ToolDefinition, ToolResult
 from minicode.workspace import resolve_tool_path
-
 
 # ---------------------------------------------------------------------------
 # Test Discovery

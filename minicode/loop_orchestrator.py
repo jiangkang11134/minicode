@@ -23,49 +23,42 @@ import concurrent.futures
 import time
 from typing import Any, Callable
 
-from minicode.logging_config import get_logger
-from minicode.model_registry import detect_provider
-from minicode.permissions import PermissionManager
-from minicode.state import Store, AppState
-from minicode.tooling import ToolContext, ToolRegistry, ToolResult
-from minicode.types import (
-    AgentStep,
-    ChatMessage,
-    ModelAdapter,
-    RuntimeEvent,
-    RuntimeEventCategory,
-)
-from minicode.context_manager import ContextManager, estimate_message_tokens
-from minicode.hooks import HookEvent, fire_hook_sync
-
-# ── 子模块（拆分目标） ──
-from minicode.model_caller import (
-    _model_next,
-    _is_at_blocking_limit,
-    _infer_active_model_id,
-    _summarize_model_api_failure,
-)
-from minicode.tool_executor import _execute_single_tool, _register_tool_capabilities, init_review_hooks, _review_hooks
+from minicode.agent_intelligence import ErrorClassifier, NudgeGenerator, ToolScheduler
 
 # ── Agent 智能辅助 ──
 from minicode.agent_metrics import AgentMetricsCollector
-from minicode.agent_intelligence import ErrorClassifier, NudgeGenerator, ToolScheduler
-from minicode.working_memory import get_working_memory, protect_context
+from minicode.capability_registry import CapabilityDomain, get_registry
+from minicode.circuit_breaker import CompactionCircuitBreaker
+
+# ── 上下文管理 ──
+from minicode.context_compactor import AutoCompactConfig, ContextCompactor
+from minicode.context_manager import ContextManager, estimate_message_tokens
+from minicode.decision_audit import DecisionOutcome, get_auditor
+from minicode.hooks import HookEvent, fire_hook_sync
 
 # ── 任务系统 ──
 from minicode.intent_parser import parse_intent
-from minicode.task_object import build_task, TaskObject, TaskState
-from minicode.task_graph import TaskGraph, TaskState as GraphTaskState
-from minicode.capability_registry import get_registry, CapabilityDomain
 from minicode.layered_context import ContextBuilder, LayeredContext
-from minicode.decision_audit import get_auditor, DecisionOutcome
-from minicode.runtime_profiles import resolve_runtime_profile
-
-# ── 上下文管理 ──
-from minicode.context_compactor import ContextCompactor, AutoCompactConfig
-from minicode.micro_compact import MicroCompactor
-from minicode.circuit_breaker import CompactionCircuitBreaker
+from minicode.logging_config import get_logger
 from minicode.memory import MemoryManager
+from minicode.micro_compact import MicroCompactor
+
+# ── 子模块（拆分目标） ──
+from minicode.model_caller import (
+    _infer_active_model_id,
+    _is_at_blocking_limit,
+    _model_next,
+    _summarize_model_api_failure,
+)
+from minicode.model_registry import detect_provider
+from minicode.permissions import PermissionManager
+from minicode.runtime_profiles import resolve_runtime_profile
+from minicode.state import AppState, Store
+from minicode.task_graph import TaskGraph
+from minicode.task_graph import TaskState as GraphTaskState
+from minicode.task_object import TaskObject, TaskState, build_task
+from minicode.tool_executor import _execute_single_tool, _register_tool_capabilities, _review_hooks, init_review_hooks
+from minicode.tooling import ToolContext, ToolRegistry, ToolResult
 
 # ── 回合状态机 ──
 from minicode.turn_kernel import (
@@ -75,12 +68,20 @@ from minicode.turn_kernel import (
     build_stable_task_pack,
     build_turn_coda_summary,
     build_widening_transition_nudge,
-    decide_tool_turn,
     decide_assistant_turn,
+    decide_tool_turn,
     derive_turn_step_policy,
     finalize_work_chain_task,
     render_turn_policy_message,
 )
+from minicode.types import (
+    AgentStep,
+    ChatMessage,
+    ModelAdapter,
+    RuntimeEvent,
+    RuntimeEventCategory,
+)
+from minicode.working_memory import get_working_memory, protect_context
 
 logger = get_logger("loop_orchestrator")
 

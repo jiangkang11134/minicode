@@ -6,8 +6,12 @@
 from __future__ import annotations
 
 from .chrome import (
-    RESET, DIM, BOLD, ITALIC, HIGHLIGHT_BG,
+    BOLD,
     BRIGHT_GREEN,
+    DIM,
+    HIGHLIGHT_BG,
+    ITALIC,
+    RESET,
 )
 from .theme import theme
 

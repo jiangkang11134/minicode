@@ -13,7 +13,6 @@ from typing import Any
 from minicode.tooling import ToolDefinition, ToolResult
 from minicode.workspace import resolve_tool_path
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------

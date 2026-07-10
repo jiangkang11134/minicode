@@ -14,7 +14,7 @@ from typing import Any, Callable
 
 from minicode.logging_config import get_logger
 from minicode.permissions import PermissionManager
-from minicode.state import Store, AppState, increment_tool_calls, set_busy, set_idle
+from minicode.state import AppState, Store, increment_tool_calls, set_busy, set_idle
 from minicode.tooling import ToolContext, ToolRegistry, ToolResult
 
 logger = get_logger("tool_executor")
@@ -47,7 +47,9 @@ def _register_tool_capabilities(tools: ToolRegistry) -> None:
         tools: 工具注册表实例
     """
     from minicode.capability_registry import (
-        CapabilityMetadata, CapabilityScope, get_registry,
+        CapabilityMetadata,
+        CapabilityScope,
+        get_registry,
     )
 
     registry = get_registry()
@@ -56,7 +58,9 @@ def _register_tool_capabilities(tools: ToolRegistry) -> None:
     for tool_name in tools.list_all():
         try:
             from minicode.capability_registry import (
-                CapabilityDomain, CapabilityMetadata, CapabilityScope,
+                CapabilityDomain,
+                CapabilityMetadata,
+                CapabilityScope,
             )
             tool_def = tools.find(tool_name)
             if not tool_def:

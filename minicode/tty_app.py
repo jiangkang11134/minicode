@@ -17,23 +17,37 @@ from typing import Any, Callable
 from minicode.permissions import PermissionManager
 from minicode.tooling import ToolRegistry
 from minicode.tui.chrome import _cached_terminal_size
+from minicode.tui.event_flow import _handle_event as _handle_tty_event
+from minicode.tui.input_handler import _handle_input, _RawModeContext, _win_read_one_key
 from minicode.tui.input_parser import (
     KeyEvent,
     ParsedInputEvent,
     TextEvent,
     parse_input_chunk,
 )
-from minicode.tui.types import TranscriptEntry
-from minicode.types import ChatMessage, ModelAdapter
+from minicode.tui.renderer import _render_screen
+from minicode.tui.runtime_control import (
+    _ThrottledRenderer,
+    enter_tty_runtime,
+    exit_tty_runtime,
+    install_sigwinch_rerender,
+)
+from minicode.tui.session_flow import (
+    build_tty_runtime_state,
+    finalize_tty_session,
+    handle_session_listing,
+    install_permission_prompt,
+    load_or_create_session,
+)
 
 # ---------------------------------------------------------------------------
 from minicode.tui.state import ScreenState
-from minicode.tui.tool_helpers import _summarize_collapsed_tool_body, _summarize_tool_input, _apply_tool_result_visual_state as _shared_apply_tool_result_visual_state, _mark_unfinished_tools as _shared_mark_unfinished_tools, _save_transcript as _shared_save_transcript
-from minicode.tui.event_flow import _handle_event as _handle_tty_event
-from minicode.tui.runtime_control import _ThrottledRenderer, enter_tty_runtime, exit_tty_runtime, install_sigwinch_rerender
-from minicode.tui.session_flow import handle_session_listing, load_or_create_session, build_tty_runtime_state, install_permission_prompt, finalize_tty_session
-from minicode.tui.renderer import _render_screen
-from minicode.tui.input_handler import _RawModeContext, _handle_input, _win_read_one_key
+from minicode.tui.tool_helpers import _apply_tool_result_visual_state as _shared_apply_tool_result_visual_state
+from minicode.tui.tool_helpers import _mark_unfinished_tools as _shared_mark_unfinished_tools
+from minicode.tui.tool_helpers import _save_transcript as _shared_save_transcript
+from minicode.tui.tool_helpers import _summarize_collapsed_tool_body, _summarize_tool_input
+from minicode.tui.types import TranscriptEntry
+from minicode.types import ChatMessage, ModelAdapter
 
 # Terminal size — use unified cache from chrome module
 # ---------------------------------------------------------------------------

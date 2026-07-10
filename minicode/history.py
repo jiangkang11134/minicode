@@ -10,7 +10,6 @@ import time
 
 from minicode.config import MINI_CODE_DIR, MINI_CODE_HISTORY_PATH
 
-
 # Simple TTL cache: stores (timestamp, value)
 _history_cache: tuple[float, list[str]] | None = None
 _history_cache_ttl: float = 5.0  # seconds

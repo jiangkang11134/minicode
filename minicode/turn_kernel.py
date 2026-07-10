@@ -10,9 +10,9 @@ from dataclasses import dataclass, field
 from math import ceil
 from typing import Any, Callable, Literal
 
+from minicode.decision_audit import DecisionAuditor, DecisionOutcome
 from minicode.layered_context import ContextBuilder, LayeredContext
 from minicode.task_object import TaskObject, TaskState
-from minicode.decision_audit import DecisionAuditor, DecisionOutcome
 from minicode.types import RuntimeEventCategory
 
 TurnStopReason = Literal[

@@ -16,9 +16,9 @@ import ast
 import os
 from pathlib import Path
 from typing import Any
+
 from minicode.tooling import ToolDefinition, ToolResult
 from minicode.workspace import resolve_tool_path
-
 
 # ---------------------------------------------------------------------------
 # AST Analysis Helpers
